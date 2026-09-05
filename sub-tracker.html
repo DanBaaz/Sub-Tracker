@@ -31,6 +31,13 @@
     --subout:#ff8a00;
   }
   *{box-sizing:border-box;}
+  @keyframes screenFlash{
+    0%, 100% { background-color: var(--bg); }
+    50% { background-color: var(--danger); }
+  }
+  body.screen-flash{
+    animation: screenFlash 0.5s ease-in-out 2;
+  }
   body{
     margin:0;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
@@ -340,6 +347,14 @@
     width:0%;
     background:linear-gradient(90deg, var(--accent), var(--accent2));
     opacity:0.55;
+    transition:width .3s linear, left .3s linear;
+  }
+  .fill-late{
+    position:absolute;
+    top:0;left:0;bottom:0;
+    width:0%;
+    background:var(--danger);
+    opacity:0.6;
     transition:width .3s linear;
   }
   .bar-content{
@@ -423,6 +438,11 @@
     overflow-y:auto;
   }
   .modal-overlay.active{display:block;}
+  /* confirmation dialogs can be triggered from within another open modal (e.g. Clear
+     All Data from App Settings), so they need to stack above every other modal */
+  #confirmModal{
+    z-index:200;
+  }
   .modal-box{
     background:var(--panel);
     border-radius:16px;
@@ -532,6 +552,13 @@
     transition:opacity .15s;
   }
   .cue-sub-option.disabled-look{
+    opacity:0.4;
+    pointer-events:none;
+  }
+  .missed-sub-option{
+    transition:opacity .15s;
+  }
+  .missed-sub-option.disabled-look{
     opacity:0.4;
     pointer-events:none;
   }
@@ -722,6 +749,7 @@
   }
   .presence-toggle.present{background:var(--accent2);color:#04231f;}
   .presence-toggle.absent{background:#3a4c5c;color:var(--muted);}
+  .presence-toggle.late{background:var(--danger);color:#fff;}
   .presence-toggle.foul-active{background:#3a4c5c;color:var(--muted);}
   .presence-toggle.foul-out{background:var(--danger);color:#fff;}
   .remove-player-btn{
@@ -918,6 +946,13 @@
           </div>
           <div class="field-note">Not supported on iPhone (iOS restriction)</div>
         </div>
+        <div class="colour-field">
+          <label>Flash</label>
+          <div class="format-toggle">
+            <button type="button" id="cueFlashOn" onclick="setCueFlash(true)">On</button>
+            <button type="button" id="cueFlashOff" onclick="setCueFlash(false)">Off</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -928,7 +963,7 @@
           <div class="time-pair">
             <input type="number" id="editCueMin" min="0" max="59" value="3">
             <span class="time-sep">:</span>
-            <input type="number" id="editCueSec" min="0" max="59" value="0">
+            <input type="number" id="editCueSec" min="0" max="59" step="5" value="0">
           </div>
         </div>
         <div class="colour-field">
@@ -1044,6 +1079,10 @@
         <p>Build a full squad of any size in team options — add, rename, remove, and reorder players there. Each player has a Present/Absent toggle; only present players are included when you start a game. Up to 12 players can be present at once.</p>
       </div>
       <div class="help-section">
+        <h3>Late arrivals</h3>
+        <p>Once a game has started, marking a player Late (instead of Present) flags them as arriving after the game began — they're fully playable right away, and their bar keeps a red record of the time they missed. Turn Late player marking on/off in App Settings (🛠️); when off, mid-game marking is a plain Present/Absent toggle.</p>
+      </div>
+      <div class="help-section">
         <h3>Starting a game</h3>
         <p>The setup screen shows your present players and count (e.g. 8/12). Reorder with the ▲▼ arrows, or toggle presence right there. The top 5 present players are outlined — they'll start on court.</p>
       </div>
@@ -1063,7 +1102,11 @@
       </div>
       <div class="help-section">
         <h3>Sub reminder cues</h3>
-        <p>Set per team in options: once the "time since last sub" clock passes a set length (default 3 min), the app plays a sound and/or vibrates as a reminder, repeating at a set interval (default every 30 sec) until the next sub happens. Sound and vibration can each be toggled independently, or cues turned off entirely. Vibration isn't supported on iPhone (a platform limitation, not this app).</p>
+        <p>Set per team in options: once the "time since last sub" clock passes a set length (default 3 min), the app plays a sound, vibrates, and/or flashes the screen as a reminder, repeating at a set interval (default every 30 sec) until the next sub happens. Sound, vibration, and flash can each be toggled independently, or cues turned off entirely. Vibration isn't supported on iPhone (a platform limitation, not this app).</p>
+      </div>
+      <div class="help-section">
+        <h3>Missed sub warning</h3>
+        <p>Set in App Settings (🛠️): flashes the screen and plays a sound if the court has fewer than 5 players for too long — a sign a substitution was left half-finished. Configurable delay (default 20 sec), with its own on/off toggle. Won't trigger if the squad only has 4 or fewer players available to play.</p>
       </div>
       <div class="help-section">
         <h3>Colours &amp; appearance</h3>
@@ -1075,7 +1118,7 @@
       </div>
       <div class="help-section version-section">
         <p class="version-line">
-          <span id="versionLabel">Sub Tracker v1.09</span> —
+          <span id="versionLabel">Sub Tracker v1.10</span> —
           <button type="button" class="changelog-link" onclick="openChangelogModal()">Change Log</button>
         </p>
       </div>
@@ -1104,6 +1147,26 @@
       <button class="close-btn" onclick="closeAppSettingsModal()">&times;</button>
     </div>
     <div class="form-group">
+      <label>Late player marking</label>
+      <p class="settings-hint">When on, mid-game marking shows Late instead of Present, for a player who arrives after the game starts — their bar keeps a record of the time missed. When off, it's a plain Present/Absent toggle.</p>
+      <div class="format-toggle">
+        <button type="button" id="lateMarkingOn" onclick="setLateMarkingEnabled(true)">On</button>
+        <button type="button" id="lateMarkingOff" onclick="setLateMarkingEnabled(false)">Off</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Missed sub warning</label>
+      <p class="settings-hint">Flashes the screen and plays a sound if the court has fewer than 5 players for too long — a sign a sub was left half-finished.</p>
+      <div class="format-toggle">
+        <button type="button" id="missedSubOn" onclick="setMissedSubEnabled(true)">On</button>
+        <button type="button" id="missedSubOff" onclick="setMissedSubEnabled(false)">Off</button>
+      </div>
+    </div>
+    <div class="form-group missed-sub-option" id="missedSubTimingGroup">
+      <label>Time before warning (sec)</label>
+      <input type="number" id="editMissedSubSeconds" min="5" step="5" value="20" onchange="saveMissedSubSeconds()">
+    </div>
+    <div class="form-group">
       <label>Backup &amp; restore</label>
       <p class="settings-hint">All your teams, rosters, and settings live only in this browser on this device. Back them up before clearing browser data, or to move them to another device.</p>
       <button class="btn-secondary" onclick="exportAllData()">⬇️ Export All Teams</button>
@@ -1123,15 +1186,22 @@
 const MAX_ON_COURT = 5;
 const STORAGE_KEY = 'stTeams';
 const LAST_TEAM_KEY = 'stLastTeamId';
+const LATE_MARKING_KEY = 'stLateMarkingEnabled';
+const MISSED_SUB_ENABLED_KEY = 'stMissedSubEnabled';
+const MISSED_SUB_SECONDS_KEY = 'stMissedSubSeconds';
 
 let teams = [];
 let currentTeam = null;
 let editingTeamId = null;
 let editingFormat = 'quarters';
 let editingSuggestMode = 'time';
+let lateMarkingEnabled = true;
 let editingCuesEnabled = true;
 let editingCueSound = true;
 let editingCueVibration = true;
+let editingCueFlash = true;
+let missedSubEnabled = true;
+let missedSubSeconds = 20;
 let editingLogoData = null;
 let editingPlayers = []; // working copy of players while editing a team
 
@@ -1147,6 +1217,8 @@ let frozenSuggestIn = [];  // sub-in suggestion list; only refreshed while court
 let frozenSuggestOut = []; // sub-out suggestion list; only refreshed while court is full at 5
 let timeSinceLastSub = 0;  // seconds; resets whenever the court returns to a full 5
 let wasCourtFull = true;
+let courtShortSeconds = 0; // seconds the court has had fewer than 5 players; resets whenever full
+let totalElapsedSeconds = 0; // game-wide clock since the game started; used to snapshot "time missed" when a player is marked Late
 let wakeLock = null;
 
 // ---------- SCREEN WAKE LOCK (keep screen on during a game, mobile) ----------
@@ -1207,10 +1279,46 @@ function setLastTeam(id){
 function getLastTeamId(){
   return localStorage.getItem(LAST_TEAM_KEY);
 }
+function loadLateMarkingSetting(){
+  const raw = localStorage.getItem(LATE_MARKING_KEY);
+  lateMarkingEnabled = raw === null ? true : raw === 'true';
+}
+function setLateMarkingEnabled(val){
+  lateMarkingEnabled = val;
+  localStorage.setItem(LATE_MARKING_KEY, String(val));
+  document.getElementById('lateMarkingOn').classList.toggle('active', val);
+  document.getElementById('lateMarkingOff').classList.toggle('active', !val);
+  // if the team editor is open mid-game, refresh it so the toggle behaviour applies immediately
+  if(document.getElementById('editorModal').classList.contains('active')){
+    renderEditPlayersList();
+  }
+}
+function loadMissedSubSettings(){
+  const rawEnabled = localStorage.getItem(MISSED_SUB_ENABLED_KEY);
+  missedSubEnabled = rawEnabled === null ? true : rawEnabled === 'true';
+  const rawSeconds = parseInt(localStorage.getItem(MISSED_SUB_SECONDS_KEY));
+  missedSubSeconds = isNaN(rawSeconds) ? 20 : rawSeconds;
+}
+function setMissedSubEnabled(val){
+  missedSubEnabled = val;
+  localStorage.setItem(MISSED_SUB_ENABLED_KEY, String(val));
+  document.getElementById('missedSubOn').classList.toggle('active', val);
+  document.getElementById('missedSubOff').classList.toggle('active', !val);
+  document.getElementById('missedSubTimingGroup').classList.toggle('disabled-look', !val);
+}
+function saveMissedSubSeconds(){
+  const input = document.getElementById('editMissedSubSeconds');
+  let v = Math.max(5, parseInt(input.value) || 20);
+  input.value = v;
+  missedSubSeconds = v;
+  localStorage.setItem(MISSED_SUB_SECONDS_KEY, String(v));
+}
 
 // ---------- INIT ----------
 function init(){
   loadTeams();
+  loadLateMarkingSetting();
+  loadMissedSubSettings();
   const lastId = getLastTeamId();
   const found = teams.find(t => t.id === lastId);
   if(found){
@@ -1458,6 +1566,7 @@ function openTeamEditor(id){
   setCuesEnabled(t ? (t.cuesEnabled !== false) : true);
   setCueSound(t ? (t.cueSoundEnabled !== false) : true);
   setCueVibration(t ? (t.cueVibrationEnabled !== false) : true);
+  setCueFlash(t ? (t.cueFlashEnabled !== false) : true);
   const cueTotalSec = t && t.cueTimeSeconds != null ? t.cueTimeSeconds : 180;
   document.getElementById('editCueMin').value = Math.floor(cueTotalSec / 60);
   document.getElementById('editCueSec').value = cueTotalSec % 60;
@@ -1505,11 +1614,17 @@ function setCueVibration(val){
   document.getElementById('cueVibrationOff').classList.toggle('active', !val);
   updateCueOptionStates();
 }
+function setCueFlash(val){
+  editingCueFlash = val;
+  document.getElementById('cueFlashOn').classList.toggle('active', val);
+  document.getElementById('cueFlashOff').classList.toggle('active', !val);
+  updateCueOptionStates();
+}
 function updateCueOptionStates(){
   const cuesOff = !editingCuesEnabled;
   document.getElementById('cueSoundVibeGroup').classList.toggle('disabled-look', cuesOff);
-  // timing fields are pointless if cues are off, or if neither sound nor vibration is on
-  const timingDisabled = cuesOff || (!editingCueSound && !editingCueVibration);
+  // timing fields are pointless if cues are off, or if sound, vibration, and flash are all off
+  const timingDisabled = cuesOff || (!editingCueSound && !editingCueVibration && !editingCueFlash);
   document.getElementById('cueTimingGroup').classList.toggle('disabled-look', timingDisabled);
 }
 function handleLogoUpload(event){
@@ -1551,6 +1666,9 @@ function renderEditPlayersList(){
     const row = document.createElement('div');
     row.className = 'player-edit-row';
     const present = p.present !== false;
+    const isLate = p.present === 'late';
+    const statusLabel = isLate ? 'Late' : (present ? 'Present' : 'Absent');
+    const statusClass = isLate ? 'late' : (present ? 'present' : 'absent');
     // arrows can reorder within the present group or within the absent group,
     // but can't cross the boundary between them — absent players always stay at the bottom
     const upDisabled = i === 0 || i === presentCount;
@@ -1562,7 +1680,7 @@ function renderEditPlayersList(){
       </div>
       <input class="num" type="text" maxlength="2" placeholder="#" value="${p.num||''}" oninput="editingPlayers[${i}].num=this.value">
       <input class="name" type="text" placeholder="Player name" value="${p.name||''}" oninput="editingPlayers[${i}].name=this.value">
-      <button type="button" class="presence-toggle ${present?'present':'absent'}" onclick="togglePresence(${i})">${present?'Present':'Absent'}</button>
+      <button type="button" class="presence-toggle ${statusClass}" onclick="togglePresence(${i})">${statusLabel}</button>
       <button type="button" class="remove-player-btn" onclick="removePlayerRow(${i})">&times;</button>
     `;
     container.appendChild(row);
@@ -1578,7 +1696,19 @@ function removePlayerRow(i){
   renderEditPlayersList();
 }
 function togglePresence(i){
-  editingPlayers[i].present = editingPlayers[i].present === false ? true : false;
+  const p = editingPlayers[i];
+  if(gameStarted){
+    if(lateMarkingEnabled){
+      // mid-game with late marking on: only two reachable states — Absent or Late
+      // (Late replaces Present entirely, tagging someone who arrived after the game started)
+      p.present = (p.present === false) ? 'late' : false;
+    } else {
+      // mid-game with late marking off: plain Absent/Present toggle, no Late state
+      p.present = (p.present === false) ? true : false;
+    }
+  } else {
+    p.present = p.present === false ? true : false;
+  }
   sortPlayersPresenceFirst(editingPlayers);
   renderEditPlayersList();
 }
@@ -1618,7 +1748,7 @@ function saveTeam(){
   const cueRepeatSeconds = Math.max(5, parseInt(document.getElementById('editCueRepeatSeconds').value) || 30);
   const cleanPlayers = editingPlayers
     .filter(p => (p.num && p.num.trim()) || (p.name && p.name.trim()))
-    .map(p => ({num:(p.num||'').trim()||'?', name:(p.name||'').trim()||'Player', present: p.present !== false}));
+    .map(p => ({num:(p.num||'').trim()||'?', name:(p.name||'').trim()||'Player', present: p.present === 'late' ? 'late' : (p.present !== false)}));
 
   if(editingTeamId){
     const t = teams.find(tm => tm.id === editingTeamId);
@@ -1637,6 +1767,7 @@ function saveTeam(){
     t.cuesEnabled = editingCuesEnabled;
     t.cueSoundEnabled = editingCueSound;
     t.cueVibrationEnabled = editingCueVibration;
+    t.cueFlashEnabled = editingCueFlash;
     t.cueTimeSeconds = cueTimeSeconds;
     t.cueRepeatSeconds = cueRepeatSeconds;
     t.players = cleanPlayers;
@@ -1652,6 +1783,7 @@ function saveTeam(){
       cuesEnabled: editingCuesEnabled,
       cueSoundEnabled: editingCueSound,
       cueVibrationEnabled: editingCueVibration,
+      cueFlashEnabled: editingCueFlash,
       cueTimeSeconds: cueTimeSeconds,
       cueRepeatSeconds: cueRepeatSeconds,
       players: cleanPlayers
@@ -1690,8 +1822,18 @@ function syncLivePlayersWithTeam(){
   const newPlayers = presentTeamPlayers.map((tp, i) => {
     const key = tp.num + '|' + tp.name;
     const existing = existingByKey[key];
+    const isLate = tp.present === 'late';
     if(existing){
       existing.listIndex = i;
+      const wasLate = existing.late;
+      existing.late = isLate;
+      // snapshot missed time once, the moment they're marked Late (i.e. the moment
+      // they show up) — it doesn't keep growing after that, and a late player is
+      // fully eligible to be subbed on right away, same as anyone present
+      if(isLate && !wasLate){
+        existing.lateSeconds = totalElapsedSeconds;
+      }
+      if(existing.lateSeconds == null) existing.lateSeconds = 0;
       return existing;
     }
     return {
@@ -1700,7 +1842,9 @@ function syncLivePlayersWithTeam(){
       name: tp.name, num: tp.num,
       onCourt: false,
       seconds: 0,
-      fouledOut: false
+      fouledOut: false,
+      late: isLate,
+      lateSeconds: isLate ? totalElapsedSeconds : 0
     };
   });
 
@@ -1751,6 +1895,10 @@ function updateGearButton(name){
 // ---------- START GAME ----------
 function startGame(){
   if(!currentTeam || !currentTeam.players) return;
+  // any leftover "Late" markers from a previous game are meaningless before the game starts —
+  // normalize them back to plain Present so this game starts clean
+  currentTeam.players.forEach(p => { if(p.present === 'late') p.present = true; });
+  saveTeams();
   const present = currentTeam.players.filter(p => p.present !== false);
   if(present.length === 0) return;
   if(present.length > MAX_PRESENT) return;
@@ -1761,17 +1909,21 @@ function startGame(){
     name: p.name, num: p.num,
     onCourt: i < MAX_ON_COURT,
     seconds: 0,
-    fouledOut: false
+    fouledOut: false,
+    late: false,
+    lateSeconds: 0
   }));
 
   currentPeriod = 1;
   periodRemaining = (currentTeam.periodMinutes || 10) * 60;
+  totalElapsedSeconds = 0;
   gameStarted = true;
   gameOverPrompted = false;
   frozenSuggestIn = [];
   frozenSuggestOut = [];
   timeSinceLastSub = 0;
   wasCourtFull = true;
+  courtShortSeconds = 0;
   showScreen('game');
   renderRoster();
   updateClockDisplay();
@@ -1824,8 +1976,19 @@ function forcePauseClock(){
 
 function tick(){
   players.forEach(p => { if(p.onCourt) p.seconds++; });
+  totalElapsedSeconds++;
   timeSinceLastSub++;
   checkSubCue();
+  const onCourtNow = players.filter(p => p.onCourt).length;
+  const availableNow = players.filter(p => !p.fouledOut).length; // on court + bench, excluding fouled out
+  if(onCourtNow >= MAX_ON_COURT || availableNow <= 4){
+    // either the court's already full, or the squad's too short-handed to ever
+    // field 5 — neither case is a "missed sub", so don't accrue a warning for it
+    courtShortSeconds = 0;
+  } else {
+    courtShortSeconds++;
+  }
+  checkMissedSub();
   if(periodRemaining > 0){
     periodRemaining--;
   }
@@ -1880,6 +2043,7 @@ function fireSubCue(){
   if(currentTeam.cueVibrationEnabled !== false && navigator.vibrate){
     navigator.vibrate([200, 100, 200]);
   }
+  if(currentTeam.cueFlashEnabled !== false) flashScreen();
 }
 function checkSubCue(){
   if(!currentTeam || currentTeam.cuesEnabled === false) return;
@@ -1891,6 +2055,28 @@ function checkSubCue(){
   if(elapsedSinceCueStart % repeatTime === 0){
     fireSubCue();
   }
+}
+
+function checkMissedSub(){
+  if(!missedSubEnabled) return;
+  const threshold = missedSubSeconds || 20;
+  if(threshold <= 0) return;
+  if(courtShortSeconds < threshold) return;
+  const elapsedSinceThreshold = courtShortSeconds - threshold;
+  if(elapsedSinceThreshold % threshold === 0){
+    fireMissedSubWarning();
+  }
+}
+
+function flashScreen(){
+  const body = document.body;
+  body.classList.remove('screen-flash');
+  void body.offsetWidth; // force reflow so the animation restarts if it's already mid-flash
+  body.classList.add('screen-flash');
+}
+function fireMissedSubWarning(){
+  playCueSound();
+  flashScreen();
 }
 
 function updateClockDisplay(){
@@ -1995,8 +2181,15 @@ function resetToDefaultTheme(){
 // ---------- VERSION & CHANGE LOG ----------
 // Update APP_VERSION and add a new entry to the top of CHANGELOG whenever
 // told about a new version — that's the only thing that needs editing here.
-const APP_VERSION = '1.09';
+const APP_VERSION = '1.10';
 const CHANGELOG = [
+  { version: '1.10', changes: [
+    'Added Late player marking (mid-game): players who arrive after the game starts can be marked "Late" instead of Present — fully playable right away, with a red segment on their bar recording the time they missed. Toggle it on/off in App Settings',
+    'Added a Missed sub warning (App Settings): flashes the screen and plays a sound if the court has fewer than 5 players for too long, with a configurable delay — skips triggering when the squad has 4 or fewer players available to play',
+    'Added a Flash toggle to Sub reminder cues, alongside Sound and Vibration',
+    'Fixed confirmation dialogs (e.g. Clear All Data) sometimes appearing hidden behind other open pages',
+    'Sub time to cue seconds field now steps in 5-second increments'
+  ]},
   { version: '1.09', changes: [
     '"PLAYER LIST" label in team options now shows a live player count, e.g. "PLAYER LIST (19)"',
     'Added configurable Sub In and Sub Out colours per team',
@@ -2106,6 +2299,12 @@ function closeHelpModal(){
 
 // ---------- APP SETTINGS ----------
 function openAppSettingsModal(){
+  document.getElementById('lateMarkingOn').classList.toggle('active', lateMarkingEnabled);
+  document.getElementById('lateMarkingOff').classList.toggle('active', !lateMarkingEnabled);
+  document.getElementById('missedSubOn').classList.toggle('active', missedSubEnabled);
+  document.getElementById('missedSubOff').classList.toggle('active', !missedSubEnabled);
+  document.getElementById('missedSubTimingGroup').classList.toggle('disabled-look', !missedSubEnabled);
+  document.getElementById('editMissedSubSeconds').value = missedSubSeconds;
   document.getElementById('appSettingsModal').classList.add('active');
 }
 function closeAppSettingsModal(){
@@ -2275,7 +2474,10 @@ function getSuggestions(){
 // ---------- RENDER ----------
 function renderRoster(){
   const roster = document.getElementById('roster');
-  const maxSeconds = Math.max(1, ...players.map(p=>p.seconds));
+  // scale is based on played time PLUS late time, so a player's on-court time
+  // (once they arrive) stacks additionally on top of their late segment rather
+  // than being measured against a separate scale
+  const maxSeconds = Math.max(1, ...players.map(p=>p.seconds + (p.lateSeconds||0)));
   const suggestions = getSuggestions();
   document.getElementById('subTimer').textContent = fmtTime(timeSinceLastSub);
   const courtCount = players.filter(p=>p.onCourt).length;
@@ -2299,7 +2501,9 @@ function renderRoster(){
   }
   const displayOrder = [...onCourtGroup, ...benchGroup, ...fouled];
   displayOrder.forEach(p => {
-    const pct = Math.min(100, (p.seconds / maxSeconds) * 100);
+    const lateSeconds = p.lateSeconds || 0;
+    const latePct = Math.min(100, (lateSeconds / maxSeconds) * 100);
+    const fillPct = Math.min(100 - latePct, (p.seconds / maxSeconds) * 100);
     const isOut = suggestions.out.includes(p.id);
     const isIn = suggestions.in.includes(p.id);
     const div = document.createElement('div');
@@ -2312,7 +2516,8 @@ function renderRoster(){
       div.onclick = () => toggleSub(p.id);
     }
     div.innerHTML = `
-      <div class="fill" style="width:${pct}%"></div>
+      <div class="fill-late" style="width:${latePct}%"></div>
+      <div class="fill" style="left:${latePct}%;width:${fillPct}%"></div>
       <div class="bar-content">
         <div class="bar-left">
           <div class="jersey">${p.num}</div>

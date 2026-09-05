@@ -1,5 +1,5 @@
 // Bump this on every release so old caches get cleared out automatically.
-const CACHE_NAME = 'sub-tracker-cache-v1';
+const CACHE_NAME = 'sub-tracker-cache-v1.10';
 
 const CORE_ASSETS = [
   './sub-tracker.html',
