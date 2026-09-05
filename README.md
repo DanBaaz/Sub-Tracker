@@ -1,5 +1,7 @@
 # Sub Tracker
 
+https://danbaaz.github.io/Sub-Tracker/sub-tracker.html
+
 A junior basketball substitution tracker built for sideline use during live games. Manage multiple teams, track fair court time, and get smart substitution suggestions — all from your phone, installable as a home-screen app.
 
 ## Features
