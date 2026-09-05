@@ -1,1 +1,1 @@
- https://danbaaz.github.io/Sub-Tracker/
+ https://danbaaz.github.io/Sub-Tracker/sub-tracker.html
