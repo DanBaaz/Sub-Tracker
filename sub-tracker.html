@@ -1,0 +1,2343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sub Tracker</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1720">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sub Tracker">
+
+<style>
+  :root{
+    --bg:#0f1720;
+    --panel:#182634;
+    --panel2:#1f3245;
+    --accent:#ff8a00;
+    --accent2:#00c2a8;
+    --oncourt:#ffffff;
+    --offcourt:#3a4c5c;
+    --text:#eaf2f8;
+    --muted:#7d94a6;
+    --danger:#ff5252;
+    --subin:#00c2a8;
+    --subout:#ff8a00;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    padding:16px;
+    padding-bottom:40px;
+    transition:background .3s;
+  }
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* HEADER */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    max-width:640px;
+    margin:0 auto 18px auto;
+  }
+  .topbar-team{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+  .topbar-logo{
+    width:38px;height:38px;
+    border-radius:9px;
+    object-fit:cover;
+    background:var(--panel2);
+    flex-shrink:0;
+  }
+  .logo-default{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    line-height:1;
+  }
+  .topbar-titles{min-width:0;}
+  h1{
+    font-size:20px;
+    margin:0;
+    letter-spacing:0.3px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:12px;
+  }
+  .topbar-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .gear-btn{
+    width:40px;height:40px;
+    border-radius:50%;
+    border:none;
+    background:var(--panel);
+    color:var(--text);
+    font-size:18px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .small-icon-btn{
+    width:34px;height:34px;
+    font-size:15px;
+  }
+  .gear-btn.select-team-btn{
+    width:auto;
+    height:auto;
+    border-radius:20px;
+    padding:10px 16px;
+    font-size:13px;
+    font-weight:700;
+    background:var(--accent);
+    color:#1a1005;
+  }
+
+  /* SETUP SCREEN */
+  .setup-card{
+    background:var(--panel);
+    border-radius:16px;
+    padding:20px;
+    max-width:480px;
+    margin:0 auto;
+  }
+  .setup-hint{
+    color:var(--muted);
+    font-size:13px;
+    text-align:center;
+    margin-bottom:14px;
+  }
+  .preview-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--panel2);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:8px;
+    font-size:14px;
+    border:2px solid transparent;
+  }
+  .preview-row.starting{
+    border-color:var(--oncourt);
+  }
+  .preview-left{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+  }
+  .preview-row .pnum{
+    background:var(--accent);
+    color:#1a1005;
+    border-radius:6px;
+    width:26px;height:26px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:700;
+    margin-right:10px;
+    flex-shrink:0;
+  }
+  .preview-empty{
+    color:var(--muted);
+    font-size:13px;
+    text-align:center;
+    padding:16px 0;
+  }
+  .btn-primary{
+    width:100%;
+    padding:14px;
+    border-radius:12px;
+    border:none;
+    background:var(--accent);
+    color:#1a1005;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:12px;
+  }
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-primary.limit-exceeded{
+    background:var(--danger);
+    color:#fff;
+    opacity:1;
+  }
+  .btn-secondary{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid #2b3f52;
+    background:transparent;
+    color:var(--muted);
+    font-size:14px;
+    cursor:pointer;
+    margin-top:8px;
+  }
+
+  /* GAME SCREEN */
+  .clock-bar{
+    background:var(--panel);
+    border-radius:14px;
+    padding:14px 18px;
+    margin-bottom:14px;
+    max-width:640px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .timer-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .timer-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    flex-shrink:0;
+    gap:2px;
+  }
+  .sub-timer-col{
+    min-width:70px;
+  }
+  .period-timer-col{
+    flex:1;
+    margin-left:16px;
+  }
+  .mini-label{
+    font-size:11px;
+    color:var(--muted);
+  }
+  #periodRow.over .period-label,
+  #periodRow.over .clock-time{
+    color:var(--danger);
+  }
+  .sub-timer,
+  .clock-time{
+    font-size:26px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .clock-controls{display:flex;gap:8px;flex-shrink:0;align-items:stretch;}
+  .clock-controls button{
+    padding:9px 14px;
+    border-radius:10px;
+    border:none;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  #startBtn{
+    width:140px;
+    text-align:center;
+  }
+  .next-period-btn{
+    width:64px;
+    flex-shrink:0;
+    white-space:normal;
+    text-align:center;
+    line-height:1.15;
+    font-size:11px;
+    padding:6px 4px;
+    background:var(--panel2)!important;
+    color:var(--text)!important;
+    border:1px solid #2b3f52!important;
+  }
+  .btn-start{background:var(--accent2);color:#04231f;}
+  .btn-pause{background:#3a4c5c;color:var(--text);}
+  .btn-reset{background:transparent;color:var(--danger);border:1px solid var(--danger)!important;}
+  .btn-newgame-inline{
+    background:var(--danger)!important;
+    color:#fff!important;
+    border:1px solid var(--danger)!important;
+  }
+
+  .legend{
+    display:flex;
+    gap:16px;
+    justify-content:center;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .legend span{display:flex;align-items:center;gap:6px;}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  .court-count{
+    text-align:center;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  .court-count b{color:var(--text);}
+
+  .roster{
+    max-width:640px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .player-bar{
+    position:relative;
+    height:60px;
+    border-radius:12px;
+    background:var(--panel);
+    overflow:hidden;
+    cursor:pointer;
+    border:3px solid var(--offcourt);
+    transition:border-color .15s;
+  }
+  .player-bar.oncourt{
+    border-color:var(--oncourt);
+    border-width:5px;
+  }
+  .player-bar.suggest-out::after,
+  .player-bar.suggest-in::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    border-radius:9px;
+    pointer-events:none;
+    z-index:3;
+  }
+  .player-bar.suggest-out::after{
+    box-shadow:0 0 0 3px var(--subout) inset;
+  }
+  .player-bar.suggest-in::after{
+    box-shadow:0 0 0 3px var(--subin) inset;
+  }
+  .fill{
+    position:absolute;
+    top:0;left:0;bottom:0;
+    width:0%;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity:0.55;
+    transition:width .3s linear;
+  }
+  .bar-content{
+    position:relative;
+    z-index:2;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 14px;
+  }
+  .bar-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+  .jersey{
+    background:var(--accent);
+    color:#1a1005;
+    border-radius:8px;
+    width:34px;height:34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .pname{
+    font-weight:600;
+    font-size:15px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .ptag{
+    font-size:10px;
+    font-weight:700;
+    padding:3px 7px;
+    border-radius:6px;
+    margin-left:8px;
+    flex-shrink:0;
+  }
+  .tag-out{background:var(--subout);color:#2a1500;}
+  .tag-in{background:var(--subin);color:#002a24;}
+  .tag-foul{background:var(--danger);color:#fff;}
+  .ptime{
+    font-variant-numeric:tabular-nums;
+    font-size:14px;
+    font-weight:700;
+    color:var(--text);
+    flex-shrink:0;
+  }
+  .player-bar.fouled-out{
+    opacity:0.55;
+    cursor:default;
+  }
+  .foul-limit-btn{
+    max-width:640px;
+    margin:16px auto 0 auto;
+    display:block;
+    border-color:var(--danger)!important;
+    color:var(--danger)!important;
+  }
+  .status-strip{
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    margin-top:20px;
+  }
+
+  /* MODAL (teams + settings) */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.6);
+    z-index:100;
+    padding:16px;
+    overflow-y:auto;
+  }
+  .modal-overlay.active{display:block;}
+  .modal-box{
+    background:var(--panel);
+    border-radius:16px;
+    max-width:480px;
+    margin:20px auto;
+    padding:20px;
+  }
+  .modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .modal-header h2{font-size:18px;margin:0;}
+  .modal-header-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .help-btn{font-size:18px;}
+  .close-btn{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:22px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .team-card{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--panel2);
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .team-card img{
+    width:40px;height:40px;
+    border-radius:9px;
+    object-fit:cover;
+    flex-shrink:0;
+    background:#0004;
+  }
+  .team-card .logo-default{
+    width:40px;height:40px;
+    border-radius:9px;
+    flex-shrink:0;
+    background:#0004;
+    font-size:18px;
+  }
+  .team-card-info{flex:1;min-width:0;}
+  .team-card-info .tname{font-weight:700;font-size:15px;}
+  .team-card-info .tmeta{font-size:12px;color:var(--muted);}
+  .team-card-actions{display:flex;gap:6px;flex-shrink:0;}
+  .team-card-actions button{
+    padding:7px 10px;
+    border-radius:8px;
+    border:none;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .btn-select{
+    background:var(--accent2);
+    color:#04231f;
+    min-width:93px;
+    text-align:center;
+  }
+  .btn-edit{background:var(--panel);color:var(--text);border:1px solid #2b3f52!important;}
+
+  .form-group{margin-bottom:14px;}
+  .form-group label{
+    display:block;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .form-group input[type=text],
+  .form-group input[type=number],
+  .form-group select{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid #2b3f52;
+    color:var(--text);
+    border-radius:8px;
+    padding:10px;
+    font-size:15px;
+  }
+  .format-toggle{display:flex;gap:8px;}
+  .format-toggle button{
+    flex:1;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #2b3f52;
+    background:var(--panel2);
+    color:var(--muted);
+    font-size:13px;
+    cursor:pointer;
+  }
+  .format-toggle button.active{
+    background:var(--accent);
+    color:#1a1005;
+    border-color:var(--accent);
+    font-weight:700;
+  }
+  .cue-sub-option{
+    transition:opacity .15s;
+  }
+  .cue-sub-option.disabled-look{
+    opacity:0.4;
+    pointer-events:none;
+  }
+  .time-pair{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .time-pair input{
+    width:56px;
+    background:var(--panel2);
+    border:1px solid #2b3f52;
+    color:var(--text);
+    border-radius:8px;
+    padding:10px 6px;
+    font-size:15px;
+    text-align:center;
+  }
+  .time-sep{
+    font-size:16px;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .field-note{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.3;
+  }
+  .colour-row{display:flex;gap:16px;}
+  .colour-field{flex:1;}
+  .colour-field input[type=color]{
+    width:100%;
+    height:42px;
+    border:none;
+    border-radius:8px;
+    background:var(--panel2);
+    cursor:pointer;
+  }
+  .logo-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .logo-preview{
+    width:56px;height:56px;
+    border-radius:12px;
+    background:var(--panel2);
+    object-fit:cover;
+    flex-shrink:0;
+  }
+  .logo-preview.logo-default{font-size:26px;}
+  .logo-row label{
+    flex:1;
+    text-align:center;
+    padding:10px;
+    border-radius:8px;
+    border:1px dashed #2b3f52;
+    color:var(--muted);
+    font-size:13px;
+    cursor:pointer;
+  }
+  .logo-row input[type=file]{display:none;}
+  .btn-danger{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid var(--danger);
+    background:transparent;
+    color:var(--danger);
+    font-size:14px;
+    cursor:pointer;
+    margin-top:8px;
+  }
+  .empty-hint{
+    color:var(--muted);
+    font-size:13px;
+    text-align:center;
+    padding:20px 0;
+  }
+  .help-modal-box{
+    max-height:80vh;
+    display:flex;
+    flex-direction:column;
+  }
+  .help-content{
+    overflow-y:auto;
+    margin-bottom:16px;
+  }
+  .help-section{
+    margin-bottom:18px;
+  }
+  .help-section h3{
+    font-size:14px;
+    color:var(--accent2);
+    margin:0 0 6px 0;
+  }
+  .help-section p{
+    font-size:13px;
+    color:var(--text);
+    line-height:1.5;
+    margin:0 0 8px 0;
+  }
+  .settings-hint{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.4;
+    margin:0 0 10px 0;
+  }
+  .version-section{
+    border-top:1px solid #2b3f52;
+    padding-top:14px;
+    margin-bottom:0;
+  }
+  .version-line{
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+  }
+  .changelog-link{
+    background:none;
+    border:none;
+    padding:0;
+    margin:0;
+    font-size:12px;
+    font-family:inherit;
+    color:var(--accent2);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .changelog-entry{
+    margin-bottom:12px;
+  }
+  .changelog-entry .cl-version{
+    font-size:13px;
+    font-weight:700;
+    color:var(--text);
+    margin:0 0 4px 0;
+  }
+  .changelog-entry ul{
+    margin:0;
+    padding-left:18px;
+  }
+  .changelog-entry li{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+    margin-bottom:2px;
+  }
+
+  /* PLAYER LIST EDITOR (in options) */
+  .player-edit-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .player-edit-row input.num{
+    width:44px;
+    flex-shrink:0;
+    text-align:center;
+    background:var(--panel2);
+    border:1px solid #2b3f52;
+    color:var(--text);
+    border-radius:8px;
+    padding:9px 4px;
+    font-size:14px;
+  }
+  .player-edit-row input.name{
+    flex:1;
+    min-width:0;
+    background:var(--panel2);
+    border:1px solid #2b3f52;
+    color:var(--text);
+    border-radius:8px;
+    padding:9px 8px;
+    font-size:14px;
+  }
+  .presence-toggle{
+    flex-shrink:0;
+    padding:8px 10px;
+    border-radius:8px;
+    border:none;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .presence-toggle.present{background:var(--accent2);color:#04231f;}
+  .presence-toggle.absent{background:#3a4c5c;color:var(--muted);}
+  .presence-toggle.foul-active{background:#3a4c5c;color:var(--muted);}
+  .presence-toggle.foul-out{background:var(--danger);color:#fff;}
+  .remove-player-btn{
+    flex-shrink:0;
+    width:32px;height:32px;
+    border-radius:8px;
+    border:1px solid #2b3f52;
+    background:transparent;
+    color:var(--danger);
+    font-size:16px;
+    cursor:pointer;
+  }
+  .reorder-btns{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    flex-shrink:0;
+  }
+  .order-btn{
+    width:24px;height:16px;
+    font-size:9px;
+    padding:0;
+    line-height:1;
+    border:1px solid #2b3f52;
+    background:var(--panel2);
+    color:var(--muted);
+    border-radius:4px;
+    cursor:pointer;
+  }
+  .order-btn:disabled{opacity:0.25;cursor:not-allowed;}
+  .add-player-btn{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px dashed #2b3f52;
+    background:transparent;
+    color:var(--muted);
+    font-size:13px;
+    cursor:pointer;
+    margin-top:4px;
+    margin-bottom:6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-team">
+    <img id="headerLogo" class="topbar-logo" style="display:none;">
+    <div id="headerLogoDefault" class="topbar-logo logo-default">🏀</div>
+    <div class="topbar-titles">
+      <h1 id="headerTeamName">🏀 Sub Tracker</h1>
+      <div class="subtitle" id="headerMeta">Junior basketball substitution manager</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="gear-btn small-icon-btn" id="topHelpBtn" style="display:none;" onclick="openHelpModal()" title="Help">❓</button>
+    <button class="gear-btn small-icon-btn" id="topSettingsBtn" style="display:none;" onclick="openAppSettingsModal()" title="App settings">🛠️</button>
+    <button class="gear-btn" id="gearBtn">⚙️</button>
+  </div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setup" class="screen active">
+  <div class="setup-card">
+    <div class="setup-hint">Present players for today's game. <span id="presentCountLabel">(0/0)</span></div>
+    <div id="rosterPreview"></div>
+    <button class="btn-primary" id="startBtn2" onclick="startGame()">Start Game</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game" class="screen">
+  <div class="clock-bar" id="periodRow">
+    <div class="timer-row">
+      <div class="timer-col sub-timer-col">
+        <span class="mini-label">Time since last sub.</span>
+        <div class="sub-timer" id="subTimer">00:00</div>
+      </div>
+      <div class="timer-col period-timer-col">
+        <span class="mini-label period-label" id="periodLabel">Quarter 1 of 4</span>
+        <div class="clock-time" id="clockTime">10:00</div>
+      </div>
+      <div class="clock-controls">
+        <button class="btn-start" id="startBtn" onclick="toggleClock()">Start</button>
+        <button class="next-period-btn" id="nextPeriodBtn" onclick="nextPeriod()">Next Period</button>
+        <button class="next-period-btn btn-newgame-inline" id="newGameBarBtn" style="display:none;" onclick="confirmNewGame()">New Game</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--oncourt)"></span>On court (outline)</span>
+    <span><span class="dot" style="background:var(--subout)"></span>Suggested to sub OUT</span>
+    <span><span class="dot" style="background:var(--subin)"></span>Suggested to sub IN</span>
+  </div>
+
+  <div class="court-count">On court: <b id="courtCount">0</b> / 5 &nbsp;·&nbsp; Tap a player to sub on/off</div>
+
+  <div class="roster" id="roster"></div>
+
+  <button class="btn-secondary foul-limit-btn" onclick="openFoulModal()">Player Foul Limit Reached</button>
+
+  <div class="status-strip" id="statusStrip">Bar fill shows time played relative to the most-played player</div>
+</div>
+
+<!-- TEAMS / SETTINGS MODAL -->
+<div class="modal-overlay" id="teamsModal">
+  <div class="modal-box" id="teamsListView">
+    <div class="modal-header">
+      <h2>Your Teams</h2>
+      <div class="modal-header-actions">
+        <button class="close-btn help-btn" onclick="openHelpModal()" title="Help">❓</button>
+        <button class="close-btn" onclick="closeTeamsModal()">&times;</button>
+      </div>
+    </div>
+    <div id="teamsList"></div>
+    <button class="btn-primary" onclick="openTeamEditor(null)">+ New Team</button>
+  </div>
+</div>
+
+<!-- TEAM EDITOR MODAL -->
+<div class="modal-overlay" id="editorModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="editorTitle">New Team</h2>
+      <div class="modal-header-actions">
+        <button class="close-btn help-btn" id="editorSettingsBtn" style="display:none;" onclick="openAppSettingsModal()" title="App settings">🛠️</button>
+        <button class="close-btn help-btn" id="editorHelpBtn" style="display:none;" onclick="openHelpModal()" title="Help">❓</button>
+        <button class="close-btn" onclick="closeEditorModal()">&times;</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Team name</label>
+      <input type="text" id="editName" placeholder="e.g. U12 Thunder">
+    </div>
+
+    <div class="form-group">
+      <label>PLAYER LIST <span id="playerListCount" style="color:var(--muted);font-weight:400;"></span></label>
+      <div id="editPlayersList"></div>
+      <button type="button" class="add-player-btn" onclick="addPlayerRow()">+ Add Player</button>
+    </div>
+
+    <div class="form-group">
+      <label>Game format</label>
+      <div class="format-toggle">
+        <button type="button" id="fmtHalves" onclick="setFormat('halves')">2 Halves</button>
+        <button type="button" id="fmtQuarters" onclick="setFormat('quarters')">4 Quarters</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label id="durationLabel">Duration per half (minutes)</label>
+      <input type="number" id="editDuration" min="1" max="60" value="10">
+    </div>
+
+    <div class="form-group">
+      <label>Sub suggestions based on</label>
+      <div class="format-toggle">
+        <button type="button" id="modeTime" onclick="setSuggestMode('time')">Court Time</button>
+        <button type="button" id="modeOrder" onclick="setSuggestMode('order')">Next On List</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Number of sub suggestions <span style="color:var(--muted);font-weight:400;">(max 5)</span></label>
+      <input type="number" id="editSuggestCount" min="0" max="5" value="3" oninput="clampSuggestCount()">
+    </div>
+
+    <div class="form-group">
+      <label>Sub reminder cues</label>
+      <div class="format-toggle">
+        <button type="button" id="cuesOn" onclick="setCuesEnabled(true)">On</button>
+        <button type="button" id="cuesOff" onclick="setCuesEnabled(false)">Off</button>
+      </div>
+    </div>
+
+    <div class="form-group cue-sub-option" id="cueSoundVibeGroup">
+      <div class="colour-row">
+        <div class="colour-field">
+          <label>Sound</label>
+          <div class="format-toggle">
+            <button type="button" id="cueSoundOn" onclick="setCueSound(true)">On</button>
+            <button type="button" id="cueSoundOff" onclick="setCueSound(false)">Off</button>
+          </div>
+        </div>
+        <div class="colour-field">
+          <label>Vibration</label>
+          <div class="format-toggle">
+            <button type="button" id="cueVibrationOn" onclick="setCueVibration(true)">On</button>
+            <button type="button" id="cueVibrationOff" onclick="setCueVibration(false)">Off</button>
+          </div>
+          <div class="field-note">Not supported on iPhone (iOS restriction)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group cue-sub-option" id="cueTimingGroup">
+      <div class="colour-row">
+        <div class="colour-field">
+          <label>Sub time to cue (min:sec)</label>
+          <div class="time-pair">
+            <input type="number" id="editCueMin" min="0" max="59" value="3">
+            <span class="time-sep">:</span>
+            <input type="number" id="editCueSec" min="0" max="59" value="0">
+          </div>
+        </div>
+        <div class="colour-field">
+          <label>Repeat cue time (sec)</label>
+          <input type="number" id="editCueRepeatSeconds" min="5" step="5" value="30">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Team logo / image</label>
+      <div class="logo-row">
+        <div id="logoPreviewDefault" class="logo-preview logo-default">🏀</div>
+        <img id="logoPreview" class="logo-preview" style="display:none;">
+        <label for="logoInput" id="logoLabel">Tap to upload logo</label>
+        <input type="file" id="logoInput" accept="image/*" onchange="handleLogoUpload(event)">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <button type="button" class="btn-secondary" onclick="openColourModal()">🎨 Colour Schemes</button>
+    </div>
+
+    <button class="btn-primary" onclick="saveTeam()">Save Team</button>
+    <button class="btn-danger" id="deleteTeamBtn" style="display:none;" onclick="deleteTeam()">Delete Team</button>
+    <button class="btn-secondary" onclick="closeEditorModal()">Cancel</button>
+
+    <button class="btn-reset" id="newGameTopBtn" style="display:none;width:100%;padding:12px;border-radius:12px;font-size:14px;font-weight:700;margin-top:16px;" onclick="confirmNewGame()">🔄 New Game</button>
+  </div>
+</div>
+
+<!-- CUSTOM CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box" style="max-width:340px;">
+    <p id="confirmMessage" style="margin:0 0 20px 0;font-size:15px;line-height:1.4;color:var(--text);"></p>
+    <button class="btn-primary" onclick="handleConfirmYes()">Yes</button>
+    <button class="btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- FOUL LIMIT MODAL -->
+<div class="modal-overlay" id="foulModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Foul Limit Reached</h2>
+      <button class="close-btn" onclick="closeFoulModal()">&times;</button>
+    </div>
+    <div id="foulPlayersList"></div>
+    <button class="btn-primary" onclick="closeFoulModal()">Done</button>
+  </div>
+</div>
+
+<!-- COLOUR SCHEMES MODAL -->
+<div class="modal-overlay" id="colourModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Colour Schemes</h2>
+      <button class="close-btn" onclick="closeColourModal()">&times;</button>
+    </div>
+
+    <div class="form-group">
+      <div class="colour-row">
+        <div class="colour-field">
+          <label>Background colour</label>
+          <input type="color" id="editBgColor" value="#0f1720">
+        </div>
+        <div class="colour-field">
+          <label>Player bar colour</label>
+          <input type="color" id="editPlayerColor" value="#ff8a00">
+        </div>
+      </div>
+      <div class="colour-row" style="margin-top:14px;">
+        <div class="colour-field">
+          <label>On court highlight colour</label>
+          <input type="color" id="editOnCourtColor" value="#ffffff">
+        </div>
+        <div class="colour-field">
+          <label>Off-court highlight colour</label>
+          <input type="color" id="editOffCourtColor" value="#3a4c5c">
+        </div>
+      </div>
+      <div class="colour-row" style="margin-top:14px;">
+        <div class="colour-field">
+          <label>Sub In colour</label>
+          <input type="color" id="editSubInColor" value="#00c2a8">
+        </div>
+        <div class="colour-field">
+          <label>Sub Out colour</label>
+          <input type="color" id="editSubOutColor" value="#ff8a00">
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="btn-danger" onclick="resetToDefaultTheme()">↺ Reset to Default Theme</button>
+    <button class="btn-primary" onclick="closeColourModal()">Done</button>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-box help-modal-box">
+    <div class="modal-header">
+      <h2>Help</h2>
+      <button class="close-btn" onclick="closeHelpModal()">&times;</button>
+    </div>
+    <div class="help-content">
+      <div class="help-section">
+        <h3>Teams</h3>
+        <p>Each team has its own roster, game format, timer duration, colours, and sub-suggestion settings. Create teams and switch between them from the "Your Teams" list — tap Select to load one, or Edit to change its settings.</p>
+      </div>
+      <div class="help-section">
+        <h3>Player list &amp; presence</h3>
+        <p>Build a full squad of any size in team options — add, rename, remove, and reorder players there. Each player has a Present/Absent toggle; only present players are included when you start a game. Up to 12 players can be present at once.</p>
+      </div>
+      <div class="help-section">
+        <h3>Starting a game</h3>
+        <p>The setup screen shows your present players and count (e.g. 8/12). Reorder with the ▲▼ arrows, or toggle presence right there. The top 5 present players are outlined — they'll start on court.</p>
+      </div>
+      <div class="help-section">
+        <h3>During the game</h3>
+        <p>The clock counts down each quarter/half. Tap Next Period to advance and reset the clock (it'll confirm first if time's still on the clock). Once the final period hits 0:00, a New Game button appears in its place — player times keep counting past 0:00 in case of overtime.</p>
+      </div>
+      <div class="help-section">
+        <h3>Substitutions</h3>
+        <p>Tap any player's bar to sub them on or off court — on-court players get a thick outline. Sub suggestions highlight who to bring off (orange) and who to bring on (teal), in one of two modes set per team:</p>
+        <p><b>Court Time</b> — suggests the players with the most time on court, and the least time on the bench.<br><b>Next On List</b> — ignores time and just follows your fixed roster order, rotating players to the bottom of the list once subbed.</p>
+        <p>The number of suggestions is configurable per team and automatically scales down if your bench is small. Suggestions freeze mid-swap (only shrinking, never adding new names) until the court is back to a full 5.</p>
+      </div>
+      <div class="help-section">
+        <h3>Fouls</h3>
+        <p>Use "Player Foul Limit Reached" below the roster to mark a player fouled out. They're automatically taken off court, moved to the bottom of the list with a "Fouled Off" tag, and excluded from all sub suggestions for the rest of the game.</p>
+      </div>
+      <div class="help-section">
+        <h3>Sub reminder cues</h3>
+        <p>Set per team in options: once the "time since last sub" clock passes a set length (default 3 min), the app plays a sound and/or vibrates as a reminder, repeating at a set interval (default every 30 sec) until the next sub happens. Sound and vibration can each be toggled independently, or cues turned off entirely. Vibration isn't supported on iPhone (a platform limitation, not this app).</p>
+      </div>
+      <div class="help-section">
+        <h3>Colours &amp; appearance</h3>
+        <p>Set a background colour, player bar colour, logo, and on-court highlight colour per team in options. Text and panel colours automatically adjust for contrast against whatever background you pick.</p>
+      </div>
+      <div class="help-section">
+        <h3>Data &amp; screen</h3>
+        <p>Everything is saved on this device/browser only. Use App Settings (🛠️) to back up, restore, or clear your data. The screen is kept awake automatically while a game is running.</p>
+      </div>
+      <div class="help-section version-section">
+        <p class="version-line">
+          <span id="versionLabel">Sub Tracker v1.09</span> —
+          <button type="button" class="changelog-link" onclick="openChangelogModal()">Change Log</button>
+        </p>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="closeHelpModal()">Close</button>
+  </div>
+</div>
+
+<!-- CHANGE LOG MODAL -->
+<div class="modal-overlay" id="changelogModal">
+  <div class="modal-box help-modal-box">
+    <div class="modal-header">
+      <h2>Change Log</h2>
+      <button class="close-btn" onclick="closeChangelogModal()">&times;</button>
+    </div>
+    <div class="help-content" id="changelogSection"></div>
+    <button class="btn-secondary" onclick="closeChangelogModal(); openHelpModal();">◂ Back to Help</button>
+  </div>
+</div>
+
+<!-- APP SETTINGS MODAL -->
+<div class="modal-overlay" id="appSettingsModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>App Settings</h2>
+      <button class="close-btn" onclick="closeAppSettingsModal()">&times;</button>
+    </div>
+    <div class="form-group">
+      <label>Backup &amp; restore</label>
+      <p class="settings-hint">All your teams, rosters, and settings live only in this browser on this device. Back them up before clearing browser data, or to move them to another device.</p>
+      <button class="btn-secondary" onclick="exportAllData()">⬇️ Export All Teams</button>
+      <label for="importFileInput" class="btn-secondary" style="display:block;text-align:center;margin-top:8px;">⬆️ Import Teams</label>
+      <input type="file" id="importFileInput" accept="application/json" style="display:none;" onchange="importAllData(event)">
+    </div>
+    <div class="form-group">
+      <label>Reset</label>
+      <button class="btn-danger" onclick="confirmClearAllData()">🗑️ Clear All Data</button>
+    </div>
+    <button class="btn-secondary" onclick="openHelpModal()">❓ Help</button>
+  </div>
+</div>
+
+<script>
+
+const MAX_ON_COURT = 5;
+const STORAGE_KEY = 'stTeams';
+const LAST_TEAM_KEY = 'stLastTeamId';
+
+let teams = [];
+let currentTeam = null;
+let editingTeamId = null;
+let editingFormat = 'quarters';
+let editingSuggestMode = 'time';
+let editingCuesEnabled = true;
+let editingCueSound = true;
+let editingCueVibration = true;
+let editingLogoData = null;
+let editingPlayers = []; // working copy of players while editing a team
+
+let players = [];
+let running = false;
+let tickInterval = null;
+let currentPeriod = 1;
+let periodRemaining = 0;
+let gameStarted = false;
+let gameOverPrompted = false;
+let confirmCallback = null;
+let frozenSuggestIn = [];  // sub-in suggestion list; only refreshed while court is full at 5
+let frozenSuggestOut = []; // sub-out suggestion list; only refreshed while court is full at 5
+let timeSinceLastSub = 0;  // seconds; resets whenever the court returns to a full 5
+let wasCourtFull = true;
+let wakeLock = null;
+
+// ---------- SCREEN WAKE LOCK (keep screen on during a game, mobile) ----------
+async function requestWakeLock(){
+  if(!('wakeLock' in navigator)) return;
+  try{
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  }catch(err){
+    // wake lock isn't available (unsupported browser, battery saver, etc.) — fail silently
+    wakeLock = null;
+  }
+}
+function releaseWakeLock(){
+  if(wakeLock){
+    wakeLock.release();
+    wakeLock = null;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  // wake locks are auto-released when the tab/app loses visibility (e.g. switching
+  // apps briefly) — re-acquire it when coming back if a game is still in progress
+  if(document.visibilityState === 'visible' && gameStarted){
+    requestWakeLock();
+  }
+});
+
+
+// ---------- CUSTOM CONFIRM (native confirm() can be blocked in sandboxed previews) ----------
+function showConfirm(message, onYes){
+  document.getElementById('confirmMessage').textContent = message;
+  confirmCallback = onYes;
+  document.getElementById('confirmModal').classList.add('active');
+}
+function closeConfirmModal(){
+  document.getElementById('confirmModal').classList.remove('active');
+  confirmCallback = null;
+}
+function handleConfirmYes(){
+  const cb = confirmCallback;
+  closeConfirmModal();
+  if(cb) cb();
+}
+
+// ---------- PERSISTENCE ----------
+function loadTeams(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    teams = raw ? JSON.parse(raw) : [];
+  }catch(e){ teams = []; }
+}
+function saveTeams(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
+}
+function setLastTeam(id){
+  localStorage.setItem(LAST_TEAM_KEY, id);
+}
+function getLastTeamId(){
+  return localStorage.getItem(LAST_TEAM_KEY);
+}
+
+// ---------- INIT ----------
+function init(){
+  loadTeams();
+  const lastId = getLastTeamId();
+  const found = teams.find(t => t.id === lastId);
+  if(found){
+    selectTeam(found.id, false);
+  } else {
+    applyTheme(null);
+    renderHeader();
+    renderRosterPreview();
+    if(teams.length === 0){
+      openTeamEditor(null);
+    } else {
+      openTeamsModal();
+    }
+  }
+  updateGearButton('setup');
+}
+
+// ---------- THEME / HEADER ----------
+function hexToRgb(hex){
+  const c = (hex || '#0f1720').replace('#','');
+  const full = c.length === 3 ? c.split('').map(ch => ch+ch).join('') : c;
+  return {
+    r: parseInt(full.substring(0,2),16) || 0,
+    g: parseInt(full.substring(2,4),16) || 0,
+    b: parseInt(full.substring(4,6),16) || 0
+  };
+}
+function getLuminance(hex){
+  const {r,g,b} = hexToRgb(hex);
+  return (0.299*r + 0.587*g + 0.114*b) / 255;
+}
+function applyTheme(team){
+  const root = document.documentElement.style;
+  const bg = team ? (team.bgColor || '#0f1720') : '#0f1720';
+  const accent = team ? (team.playerColor || '#ff8a00') : '#ff8a00';
+  const isLight = getLuminance(bg) > 0.55;
+  const defaultOnCourt = isLight ? '#10181f' : '#ffffff';
+  const onCourt = (team && team.onCourtColor) ? team.onCourtColor : defaultOnCourt;
+  const defaultOffCourt = isLight ? '#c7d0d8' : '#3a4c5c';
+  const offCourt = (team && team.offCourtColor) ? team.offCourtColor : defaultOffCourt;
+  const subIn = (team && team.subInColor) ? team.subInColor : '#00c2a8';
+  const subOut = (team && team.subOutColor) ? team.subOutColor : '#ff8a00';
+  root.setProperty('--bg', bg);
+  root.setProperty('--accent', accent);
+  root.setProperty('--text', isLight ? '#10181f' : '#eaf2f8');
+  root.setProperty('--muted', isLight ? '#5b6b78' : '#7d94a6');
+  root.setProperty('--panel', isLight ? '#ffffff' : '#182634');
+  root.setProperty('--panel2', isLight ? '#eef2f5' : '#1f3245');
+  root.setProperty('--oncourt', onCourt);
+  root.setProperty('--offcourt', offCourt);
+  root.setProperty('--subin', subIn);
+  root.setProperty('--subout', subOut);
+}
+
+function renderHeader(){
+  const nameEl = document.getElementById('headerTeamName');
+  const metaEl = document.getElementById('headerMeta');
+  const logoEl = document.getElementById('headerLogo');
+  const logoDefaultEl = document.getElementById('headerLogoDefault');
+  if(currentTeam){
+    nameEl.textContent = currentTeam.name;
+    const fmtLabel = currentTeam.format === 'halves' ? '2 halves' : '4 quarters';
+    metaEl.textContent = `${fmtLabel} · ${currentTeam.periodMinutes} min each`;
+    if(currentTeam.logo){
+      logoEl.src = currentTeam.logo;
+      logoEl.style.display = 'block';
+      logoDefaultEl.style.display = 'none';
+    } else {
+      logoEl.style.display = 'none';
+      logoDefaultEl.style.display = 'flex';
+    }
+  } else {
+    nameEl.textContent = '🏀 Sub Tracker';
+    metaEl.textContent = 'Junior basketball substitution manager';
+    logoEl.style.display = 'none';
+    logoDefaultEl.style.display = 'none';
+  }
+}
+
+// ---------- GEAR BUTTON ----------
+function handleGearClick(){
+  if(gameStarted && currentTeam){
+    openTeamEditor(currentTeam.id);
+  } else {
+    openTeamsModal();
+  }
+}
+
+// ---------- TEAMS MODAL ----------
+function openTeamsModal(){
+  renderTeamsList();
+  document.getElementById('teamsModal').classList.add('active');
+}
+function closeTeamsModal(){
+  document.getElementById('teamsModal').classList.remove('active');
+}
+function renderTeamsList(){
+  const container = document.getElementById('teamsList');
+  if(teams.length === 0){
+    container.innerHTML = '<div class="empty-hint">No teams yet. Create one to get started.</div>';
+    return;
+  }
+  container.innerHTML = '';
+  teams.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'team-card';
+    const fmtLabel = t.format === 'halves' ? '2 halves' : '4 quarters';
+    card.innerHTML = `
+      <div class="reorder-btns">
+        <button type="button" class="order-btn" onclick="moveTeam(${i},-1)" ${i===0?'disabled':''}>▲</button>
+        <button type="button" class="order-btn" onclick="moveTeam(${i},1)" ${i===teams.length-1?'disabled':''}>▼</button>
+      </div>
+      ${t.logo ? `<img src="${t.logo}">` : `<div class="logo-default">🏀</div>`}
+      <div class="team-card-info">
+        <div class="tname">${t.name}</div>
+        <div class="tmeta">${fmtLabel} · ${t.periodMinutes} min</div>
+      </div>
+      <div class="team-card-actions">
+        <button class="btn-select" onclick="selectTeam('${t.id}', true)">Select</button>
+        <button class="btn-edit" onclick="openTeamEditor('${t.id}')">Edit</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+function moveTeam(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= teams.length) return;
+  [teams[i], teams[j]] = [teams[j], teams[i]];
+  saveTeams();
+  renderTeamsList();
+}
+
+function selectTeam(id, closeModal){
+  const t = teams.find(tm => tm.id === id);
+  if(!t) return;
+  currentTeam = t;
+  if(currentTeam.players && currentTeam.players.length){
+    sortPlayersPresenceFirst(currentTeam.players);
+    saveTeams();
+  }
+  setLastTeam(id);
+  applyTheme(t);
+  renderHeader();
+  renderRosterPreview();
+  if(closeModal) closeTeamsModal();
+  showScreen('setup');
+}
+
+// ---------- SETUP SCREEN (roster preview, editable presence, sourced from team) ----------
+const MAX_PRESENT = 12;
+
+function sortPlayersPresenceFirst(list){
+  // stable sort: present players first (keeping their relative order),
+  // absent players after (keeping their relative order)
+  list.sort((a, b) => {
+    const aAbsent = a.present === false ? 1 : 0;
+    const bAbsent = b.present === false ? 1 : 0;
+    return aAbsent - bAbsent;
+  });
+}
+
+function renderRosterPreview(){
+  const container = document.getElementById('rosterPreview');
+  const startBtn = document.getElementById('startBtn2');
+  const countLabel = document.getElementById('presentCountLabel');
+  if(!currentTeam || !currentTeam.players || currentTeam.players.length === 0){
+    container.innerHTML = '<div class="preview-empty">No players yet. Add players for this team via the ⚙️ options menu.</div>';
+    countLabel.textContent = '(0/0)';
+    startBtn.disabled = true;
+    startBtn.classList.remove('limit-exceeded');
+    startBtn.textContent = 'Start Game';
+    return;
+  }
+  container.innerHTML = '';
+  const presentCount = currentTeam.players.filter(p => p.present !== false).length;
+  currentTeam.players.forEach((p, i) => {
+    const present = p.present !== false;
+    const isStarting = present && i < MAX_ON_COURT;
+    // arrows can reorder within the present group or within the absent group,
+    // but can't cross the boundary between them — absent players always stay at the bottom
+    const upDisabled = i === 0 || i === presentCount;
+    const downDisabled = i === currentTeam.players.length - 1 || i === presentCount - 1;
+    const row = document.createElement('div');
+    row.className = 'preview-row' + (isStarting ? ' starting' : '');
+    row.innerHTML = `
+      <div class="preview-left">
+        <div class="reorder-btns">
+          <button type="button" class="order-btn" onclick="moveSetupPlayer(${i},-1)" ${upDisabled?'disabled':''}>▲</button>
+          <button type="button" class="order-btn" onclick="moveSetupPlayer(${i},1)" ${downDisabled?'disabled':''}>▼</button>
+        </div>
+        <span><span class="pnum">${p.num}</span>${p.name}</span>
+      </div>
+      <button type="button" class="presence-toggle ${present?'present':'absent'}" onclick="togglePreviewPresence(${i})">${present?'Present':'Absent'}</button>
+    `;
+    container.appendChild(row);
+  });
+  const totalCount = currentTeam.players.length;
+  countLabel.textContent = `(${presentCount}/${Math.min(totalCount, MAX_PRESENT)})`;
+
+  if(presentCount > MAX_PRESENT){
+    startBtn.disabled = true;
+    startBtn.classList.add('limit-exceeded');
+    startBtn.textContent = '12 Player Limit Exceeded.';
+  } else {
+    startBtn.classList.remove('limit-exceeded');
+    startBtn.textContent = 'Start Game';
+    startBtn.disabled = presentCount === 0;
+  }
+}
+function moveSetupPlayer(i, dir){
+  const j = i + dir;
+  if(!currentTeam || !currentTeam.players) return;
+  if(j < 0 || j >= currentTeam.players.length) return;
+  const a = currentTeam.players[i], b = currentTeam.players[j];
+  if((a.present !== false) !== (b.present !== false)) return; // don't cross the present/absent boundary
+  [currentTeam.players[i], currentTeam.players[j]] = [b, a];
+  saveTeams();
+  renderRosterPreview();
+}
+function togglePreviewPresence(i){
+  currentTeam.players[i].present = currentTeam.players[i].present === false ? true : false;
+  sortPlayersPresenceFirst(currentTeam.players);
+  saveTeams();
+  renderRosterPreview();
+}
+
+// ---------- TEAM EDITOR ----------
+function openTeamEditor(id){
+  editingTeamId = id;
+  const t = id ? teams.find(tm => tm.id === id) : null;
+  document.getElementById('editorTitle').textContent = t ? 'Edit Team' : 'New Team';
+  document.getElementById('editName').value = t ? t.name : '';
+  document.getElementById('editDuration').value = t ? t.periodMinutes : 10;
+  document.getElementById('editBgColor').value = t ? (t.bgColor || '#0f1720') : '#0f1720';
+  document.getElementById('editPlayerColor').value = t ? (t.playerColor || '#ff8a00') : '#ff8a00';
+  document.getElementById('editOnCourtColor').value = t ? (t.onCourtColor || '#ffffff') : '#ffffff';
+  document.getElementById('editOffCourtColor').value = t ? (t.offCourtColor || '#3a4c5c') : '#3a4c5c';
+  document.getElementById('editSubInColor').value = t ? (t.subInColor || '#00c2a8') : '#00c2a8';
+  document.getElementById('editSubOutColor').value = t ? (t.subOutColor || '#ff8a00') : '#ff8a00';
+  editingLogoData = t ? (t.logo || null) : null;
+  updateLogoPreview();
+  setFormat(t ? t.format : 'quarters');
+  setSuggestMode(t ? (t.suggestionMode || 'time') : 'time');
+  setCuesEnabled(t ? (t.cuesEnabled !== false) : true);
+  setCueSound(t ? (t.cueSoundEnabled !== false) : true);
+  setCueVibration(t ? (t.cueVibrationEnabled !== false) : true);
+  const cueTotalSec = t && t.cueTimeSeconds != null ? t.cueTimeSeconds : 180;
+  document.getElementById('editCueMin').value = Math.floor(cueTotalSec / 60);
+  document.getElementById('editCueSec').value = cueTotalSec % 60;
+  document.getElementById('editCueRepeatSeconds').value = t && t.cueRepeatSeconds != null ? t.cueRepeatSeconds : 30;
+  editingPlayers = t && t.players ? JSON.parse(JSON.stringify(t.players)) : [];
+  sortPlayersPresenceFirst(editingPlayers);
+  renderEditPlayersList();
+  document.getElementById('editSuggestCount').value = t && t.suggestCount != null ? t.suggestCount : 3;
+  document.getElementById('deleteTeamBtn').style.display = (t && !gameStarted) ? 'block' : 'none';
+  document.getElementById('newGameTopBtn').style.display = gameStarted ? 'block' : 'none';
+  document.getElementById('editorHelpBtn').style.display = gameStarted ? 'inline-block' : 'none';
+  document.getElementById('editorSettingsBtn').style.display = gameStarted ? 'inline-block' : 'none';
+  document.getElementById('editorModal').classList.add('active');
+}
+function closeEditorModal(){
+  document.getElementById('editorModal').classList.remove('active');
+}
+function setFormat(fmt){
+  editingFormat = fmt;
+  document.getElementById('fmtHalves').classList.toggle('active', fmt === 'halves');
+  document.getElementById('fmtQuarters').classList.toggle('active', fmt === 'quarters');
+  document.getElementById('durationLabel').textContent =
+    fmt === 'halves' ? 'Duration per half (minutes)' : 'Duration per quarter (minutes)';
+}
+function setSuggestMode(mode){
+  editingSuggestMode = mode;
+  document.getElementById('modeTime').classList.toggle('active', mode === 'time');
+  document.getElementById('modeOrder').classList.toggle('active', mode === 'order');
+}
+function setCuesEnabled(val){
+  editingCuesEnabled = val;
+  document.getElementById('cuesOn').classList.toggle('active', val);
+  document.getElementById('cuesOff').classList.toggle('active', !val);
+  updateCueOptionStates();
+}
+function setCueSound(val){
+  editingCueSound = val;
+  document.getElementById('cueSoundOn').classList.toggle('active', val);
+  document.getElementById('cueSoundOff').classList.toggle('active', !val);
+  updateCueOptionStates();
+}
+function setCueVibration(val){
+  editingCueVibration = val;
+  document.getElementById('cueVibrationOn').classList.toggle('active', val);
+  document.getElementById('cueVibrationOff').classList.toggle('active', !val);
+  updateCueOptionStates();
+}
+function updateCueOptionStates(){
+  const cuesOff = !editingCuesEnabled;
+  document.getElementById('cueSoundVibeGroup').classList.toggle('disabled-look', cuesOff);
+  // timing fields are pointless if cues are off, or if neither sound nor vibration is on
+  const timingDisabled = cuesOff || (!editingCueSound && !editingCueVibration);
+  document.getElementById('cueTimingGroup').classList.toggle('disabled-look', timingDisabled);
+}
+function handleLogoUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    editingLogoData = reader.result;
+    updateLogoPreview();
+  };
+  reader.readAsDataURL(file);
+}
+function updateLogoPreview(){
+  const img = document.getElementById('logoPreview');
+  const defaultBox = document.getElementById('logoPreviewDefault');
+  if(editingLogoData){
+    img.src = editingLogoData;
+    img.style.display = 'block';
+    defaultBox.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    defaultBox.style.display = 'flex';
+  }
+}
+
+// ---------- PLAYER LIST EDITOR (inside team options) ----------
+function renderEditPlayersList(){
+  const container = document.getElementById('editPlayersList');
+  container.innerHTML = '';
+  document.getElementById('playerListCount').textContent = `(${editingPlayers.length})`;
+  if(editingPlayers.length === 0){
+    const hint = document.createElement('div');
+    hint.className = 'empty-hint';
+    hint.textContent = 'No players yet. Add your first player below.';
+    container.appendChild(hint);
+  }
+  const presentCount = editingPlayers.filter(p => p.present !== false).length;
+  editingPlayers.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'player-edit-row';
+    const present = p.present !== false;
+    // arrows can reorder within the present group or within the absent group,
+    // but can't cross the boundary between them — absent players always stay at the bottom
+    const upDisabled = i === 0 || i === presentCount;
+    const downDisabled = i === editingPlayers.length - 1 || i === presentCount - 1;
+    row.innerHTML = `
+      <div class="reorder-btns">
+        <button type="button" class="order-btn" onclick="moveEditPlayer(${i},-1)" ${upDisabled?'disabled':''}>▲</button>
+        <button type="button" class="order-btn" onclick="moveEditPlayer(${i},1)" ${downDisabled?'disabled':''}>▼</button>
+      </div>
+      <input class="num" type="text" maxlength="2" placeholder="#" value="${p.num||''}" oninput="editingPlayers[${i}].num=this.value">
+      <input class="name" type="text" placeholder="Player name" value="${p.name||''}" oninput="editingPlayers[${i}].name=this.value">
+      <button type="button" class="presence-toggle ${present?'present':'absent'}" onclick="togglePresence(${i})">${present?'Present':'Absent'}</button>
+      <button type="button" class="remove-player-btn" onclick="removePlayerRow(${i})">&times;</button>
+    `;
+    container.appendChild(row);
+  });
+}
+function addPlayerRow(){
+  editingPlayers.push({num:'', name:'', present:true});
+  sortPlayersPresenceFirst(editingPlayers);
+  renderEditPlayersList();
+}
+function removePlayerRow(i){
+  editingPlayers.splice(i,1);
+  renderEditPlayersList();
+}
+function togglePresence(i){
+  editingPlayers[i].present = editingPlayers[i].present === false ? true : false;
+  sortPlayersPresenceFirst(editingPlayers);
+  renderEditPlayersList();
+}
+function moveEditPlayer(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= editingPlayers.length) return;
+  const a = editingPlayers[i], b = editingPlayers[j];
+  if((a.present !== false) !== (b.present !== false)) return; // don't cross the present/absent boundary
+  [editingPlayers[i], editingPlayers[j]] = [b, a];
+  renderEditPlayersList();
+}
+
+// ---------- SUB SUGGESTION COUNT ----------
+function clampSuggestCount(){
+  const input = document.getElementById('editSuggestCount');
+  let v = parseInt(input.value);
+  if(isNaN(v) || v < 0) v = 0;
+  if(v > MAX_ON_COURT) v = MAX_ON_COURT;
+  input.value = v;
+}
+
+function saveTeam(){
+  const name = document.getElementById('editName').value.trim();
+  if(!name){ alert('Please enter a team name.'); return; }
+  const duration = Math.max(1, parseInt(document.getElementById('editDuration').value) || 10);
+  const bgColor = document.getElementById('editBgColor').value;
+  const playerColor = document.getElementById('editPlayerColor').value;
+  const onCourtColor = document.getElementById('editOnCourtColor').value;
+  const offCourtColor = document.getElementById('editOffCourtColor').value;
+  const subInColor = document.getElementById('editSubInColor').value;
+  const subOutColor = document.getElementById('editSubOutColor').value;
+  clampSuggestCount();
+  const suggestCount = parseInt(document.getElementById('editSuggestCount').value) || 0;
+  const cueMin = Math.max(0, parseInt(document.getElementById('editCueMin').value) || 0);
+  const cueSec = Math.max(0, Math.min(59, parseInt(document.getElementById('editCueSec').value) || 0));
+  const cueTimeSeconds = (cueMin * 60) + cueSec;
+  const cueRepeatSeconds = Math.max(5, parseInt(document.getElementById('editCueRepeatSeconds').value) || 30);
+  const cleanPlayers = editingPlayers
+    .filter(p => (p.num && p.num.trim()) || (p.name && p.name.trim()))
+    .map(p => ({num:(p.num||'').trim()||'?', name:(p.name||'').trim()||'Player', present: p.present !== false}));
+
+  if(editingTeamId){
+    const t = teams.find(tm => tm.id === editingTeamId);
+    t.name = name;
+    t.format = editingFormat;
+    t.periodMinutes = duration;
+    t.logo = editingLogoData;
+    t.bgColor = bgColor;
+    t.playerColor = playerColor;
+    t.onCourtColor = onCourtColor;
+    t.offCourtColor = offCourtColor;
+    t.subInColor = subInColor;
+    t.subOutColor = subOutColor;
+    t.suggestionMode = editingSuggestMode;
+    t.suggestCount = suggestCount;
+    t.cuesEnabled = editingCuesEnabled;
+    t.cueSoundEnabled = editingCueSound;
+    t.cueVibrationEnabled = editingCueVibration;
+    t.cueTimeSeconds = cueTimeSeconds;
+    t.cueRepeatSeconds = cueRepeatSeconds;
+    t.players = cleanPlayers;
+  } else {
+    const newTeam = {
+      id: 't_' + Date.now(),
+      name, format: editingFormat,
+      periodMinutes: duration,
+      logo: editingLogoData,
+      bgColor, playerColor, onCourtColor, offCourtColor, subInColor, subOutColor,
+      suggestionMode: editingSuggestMode,
+      suggestCount: suggestCount,
+      cuesEnabled: editingCuesEnabled,
+      cueSoundEnabled: editingCueSound,
+      cueVibrationEnabled: editingCueVibration,
+      cueTimeSeconds: cueTimeSeconds,
+      cueRepeatSeconds: cueRepeatSeconds,
+      players: cleanPlayers
+    };
+    teams.push(newTeam);
+    editingTeamId = newTeam.id;
+  }
+  saveTeams();
+  closeEditorModal();
+  if(gameStarted){
+    // stay on the live game screen — refresh theme/header, and sync the live roster
+    // with any player-list edits (adds/removes/renames/presence changes)
+    currentTeam = teams.find(t => t.id === editingTeamId);
+    applyTheme(currentTeam);
+    renderHeader();
+    syncLivePlayersWithTeam();
+    renderRoster();
+    renderPeriodBar();
+  } else {
+    selectTeam(editingTeamId, true);
+  }
+}
+
+// Reconciles the live in-game `players` array with the saved team roster after
+// a mid-game edit — matching on number+name so existing players keep their
+// accumulated time, on-court status, and foul status; new entries are added
+// fresh (on bench); removed/absent players drop out of the live game.
+function syncLivePlayersWithTeam(){
+  if(!currentTeam || !currentTeam.players) return;
+  const presentTeamPlayers = currentTeam.players.filter(p => p.present !== false);
+
+  const existingByKey = {};
+  players.forEach(p => { existingByKey[p.num + '|' + p.name] = p; });
+
+  let nextId = players.length ? Math.max(...players.map(p => p.id)) + 1 : 0;
+  const newPlayers = presentTeamPlayers.map((tp, i) => {
+    const key = tp.num + '|' + tp.name;
+    const existing = existingByKey[key];
+    if(existing){
+      existing.listIndex = i;
+      return existing;
+    }
+    return {
+      id: nextId++,
+      listIndex: i,
+      name: tp.name, num: tp.num,
+      onCourt: false,
+      seconds: 0,
+      fouledOut: false
+    };
+  });
+
+  players = newPlayers;
+}
+
+function deleteTeam(){
+  if(!editingTeamId) return;
+  showConfirm('Delete this team? This cannot be undone.', () => {
+    teams = teams.filter(t => t.id !== editingTeamId);
+    saveTeams();
+    if(currentTeam && currentTeam.id === editingTeamId){
+      currentTeam = null;
+      applyTheme(null);
+      renderHeader();
+      renderRosterPreview();
+    }
+    closeEditorModal();
+    renderTeamsList();
+  });
+}
+
+function showScreen(name){
+  document.getElementById('setup').classList.toggle('active', name === 'setup');
+  document.getElementById('game').classList.toggle('active', name === 'game');
+  updateGearButton(name);
+}
+
+function updateGearButton(name){
+  const btn = document.getElementById('gearBtn');
+  const helpBtn = document.getElementById('topHelpBtn');
+  const settingsBtn = document.getElementById('topSettingsBtn');
+  if(name === 'setup'){
+    btn.textContent = 'Select Team';
+    btn.classList.add('select-team-btn');
+    btn.onclick = openTeamsModal;
+    helpBtn.style.display = 'inline-block';
+    settingsBtn.style.display = 'inline-block';
+  } else {
+    btn.textContent = '⚙️';
+    btn.classList.remove('select-team-btn');
+    btn.onclick = handleGearClick;
+    helpBtn.style.display = 'none';
+    settingsBtn.style.display = 'none';
+  }
+}
+
+// ---------- START GAME ----------
+function startGame(){
+  if(!currentTeam || !currentTeam.players) return;
+  const present = currentTeam.players.filter(p => p.present !== false);
+  if(present.length === 0) return;
+  if(present.length > MAX_PRESENT) return;
+
+  players = present.map((p, i) => ({
+    id: i,
+    listIndex: i,
+    name: p.name, num: p.num,
+    onCourt: i < MAX_ON_COURT,
+    seconds: 0,
+    fouledOut: false
+  }));
+
+  currentPeriod = 1;
+  periodRemaining = (currentTeam.periodMinutes || 10) * 60;
+  gameStarted = true;
+  gameOverPrompted = false;
+  frozenSuggestIn = [];
+  frozenSuggestOut = [];
+  timeSinceLastSub = 0;
+  wasCourtFull = true;
+  showScreen('game');
+  renderRoster();
+  updateClockDisplay();
+  renderPeriodBar();
+  requestWakeLock();
+}
+
+function confirmNewGame(){
+  showConfirm('Start a new game? This will end the current game and reset the court, clock, and player times.', () => {
+    closeEditorModal();
+    newGame();
+  });
+}
+
+function newGame(){
+  forcePauseClock();
+  gameStarted = false;
+  gameOverPrompted = false;
+  showScreen('setup');
+  renderRosterPreview();
+  releaseWakeLock();
+}
+
+// ---------- CLOCK (counts down) ----------
+function toggleClock(){
+  running = !running;
+  const btn = document.getElementById('startBtn');
+  if(running){
+    btn.textContent = 'Pause';
+    btn.classList.remove('btn-start');
+    btn.classList.add('btn-pause');
+    ensureAudioContext();
+    tickInterval = setInterval(tick, 1000);
+  } else {
+    btn.textContent = 'Start';
+    btn.classList.add('btn-start');
+    btn.classList.remove('btn-pause');
+    clearInterval(tickInterval);
+  }
+}
+
+function forcePauseClock(){
+  running = false;
+  clearInterval(tickInterval);
+  const btn = document.getElementById('startBtn');
+  btn.textContent = 'Start';
+  btn.classList.add('btn-start');
+  btn.classList.remove('btn-pause');
+}
+
+function tick(){
+  players.forEach(p => { if(p.onCourt) p.seconds++; });
+  timeSinceLastSub++;
+  checkSubCue();
+  if(periodRemaining > 0){
+    periodRemaining--;
+  }
+  // Note: intentionally NOT auto-pausing here anymore — once the period clock
+  // hits 0:00 it just holds there (shown as "TIME UP"), but player on-court
+  // times keep counting for as long as the clock keeps running, to capture
+  // any overtime/extra play. Use Pause manually to stop tracking.
+  updateClockDisplay();
+  renderRoster();
+  renderPeriodBar();
+}
+
+// ---------- SUB REMINDER CUES ----------
+let audioCtx = null;
+function ensureAudioContext(){
+  if(!audioCtx){
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if(AudioCtxClass){
+      try{ audioCtx = new AudioCtxClass(); }catch(e){ audioCtx = null; }
+    }
+  }
+  if(audioCtx && audioCtx.state === 'suspended'){
+    audioCtx.resume().catch(() => {});
+  }
+}
+function playCueSound(){
+  if(!audioCtx) return;
+  try{
+    const beep = (startTime, freq) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.35, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.3);
+    };
+    const now = audioCtx.currentTime;
+    beep(now, 880);
+    beep(now + 0.3, 880);
+  }catch(e){
+    // audio unavailable/blocked — fail silently
+  }
+}
+function fireSubCue(){
+  if(!currentTeam) return;
+  if(currentTeam.cueSoundEnabled !== false) playCueSound();
+  if(currentTeam.cueVibrationEnabled !== false && navigator.vibrate){
+    navigator.vibrate([200, 100, 200]);
+  }
+}
+function checkSubCue(){
+  if(!currentTeam || currentTeam.cuesEnabled === false) return;
+  const cueTime = currentTeam.cueTimeSeconds != null ? currentTeam.cueTimeSeconds : 180;
+  const repeatTime = currentTeam.cueRepeatSeconds != null ? currentTeam.cueRepeatSeconds : 30;
+  if(cueTime <= 0 || repeatTime <= 0) return;
+  if(timeSinceLastSub < cueTime) return;
+  const elapsedSinceCueStart = timeSinceLastSub - cueTime;
+  if(elapsedSinceCueStart % repeatTime === 0){
+    fireSubCue();
+  }
+}
+
+function updateClockDisplay(){
+  document.getElementById('clockTime').textContent = fmtTime(Math.max(0, periodRemaining));
+}
+
+function fmtTime(sec){
+  const m = Math.floor(sec/60).toString().padStart(2,'0');
+  const s = (sec%60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+// ---------- PERIODS ----------
+function nextPeriod(){
+  const totalPeriods = currentTeam && currentTeam.format === 'halves' ? 2 : 4;
+  if(currentPeriod >= totalPeriods) return;
+  const advance = () => {
+    forcePauseClock();
+    currentPeriod++;
+    periodRemaining = (currentTeam.periodMinutes || 10) * 60;
+    updateClockDisplay();
+    renderPeriodBar();
+  };
+  if(periodRemaining > 0){
+    showConfirm('Timer hasn\'t reached 0:00 yet. Move to the next period and reset the clock anyway?', advance);
+  } else {
+    advance();
+  }
+}
+
+function renderPeriodBar(){
+  const row = document.getElementById('periodRow');
+  const totalPeriods = currentTeam && currentTeam.format === 'halves' ? 2 : 4;
+  const periodWord = currentTeam && currentTeam.format === 'halves' ? 'Half' : 'Quarter';
+  const isOver = periodRemaining <= 0;
+  const isLastPeriod = currentPeriod >= totalPeriods;
+  row.classList.toggle('over', isOver);
+  document.getElementById('periodLabel').textContent =
+    `${periodWord} ${currentPeriod} of ${totalPeriods}` + (isOver ? ' · TIME UP' : '');
+
+  const nextBtn = document.getElementById('nextPeriodBtn');
+  const newGameBtn = document.getElementById('newGameBarBtn');
+  if(isLastPeriod && isOver){
+    nextBtn.style.display = 'none';
+    newGameBtn.style.display = 'block';
+  } else if(isLastPeriod){
+    nextBtn.style.display = 'none';
+    newGameBtn.style.display = 'none';
+  } else {
+    nextBtn.style.display = 'block';
+    newGameBtn.style.display = 'none';
+  }
+}
+
+// ---------- SUB TOGGLE ----------
+function toggleSub(id){
+  const idx = players.findIndex(pl => pl.id === id);
+  const p = players[idx];
+  if(p.fouledOut) return; // fouled-out players can't be subbed
+  const onCourtCount = players.filter(pl => pl.onCourt).length;
+  if(!p.onCourt && onCourtCount >= MAX_ON_COURT){
+    return; // court full, ignore
+  }
+  p.onCourt = !p.onCourt;
+
+  const mode = currentTeam ? (currentTeam.suggestionMode || 'time') : 'time';
+  if(mode === 'order'){
+    // move the just-subbed player to the bottom of the list so they cycle to the back of the queue
+    players.splice(idx, 1);
+    players.push(p);
+  }
+
+  renderRoster();
+}
+
+// ---------- FOULS ----------
+function openFoulModal(){
+  renderFoulPlayersList();
+  document.getElementById('foulModal').classList.add('active');
+}
+function closeFoulModal(){
+  document.getElementById('foulModal').classList.remove('active');
+}
+
+// ---------- COLOUR SCHEMES ----------
+function openColourModal(){
+  document.getElementById('colourModal').classList.add('active');
+}
+function closeColourModal(){
+  document.getElementById('colourModal').classList.remove('active');
+}
+function resetToDefaultTheme(){
+  document.getElementById('editBgColor').value = '#0f1720';
+  document.getElementById('editPlayerColor').value = '#ff8a00';
+  document.getElementById('editOnCourtColor').value = '#ffffff';
+  document.getElementById('editOffCourtColor').value = '#3a4c5c';
+  document.getElementById('editSubInColor').value = '#00c2a8';
+  document.getElementById('editSubOutColor').value = '#ff8a00';
+}
+
+// ---------- HELP ----------
+// ---------- VERSION & CHANGE LOG ----------
+// Update APP_VERSION and add a new entry to the top of CHANGELOG whenever
+// told about a new version — that's the only thing that needs editing here.
+const APP_VERSION = '1.09';
+const CHANGELOG = [
+  { version: '1.09', changes: [
+    '"PLAYER LIST" label in team options now shows a live player count, e.g. "PLAYER LIST (19)"',
+    'Added configurable Sub In and Sub Out colours per team',
+    'Fixed the Sub Out highlight sometimes being covered by a player\'s time-played bar',
+    'All colour settings (background, player bar, on-court, off-court, sub in/out) moved into a dedicated "Colour Schemes" page, with a Reset to Default Theme button'
+  ]},
+  { version: '1.08', changes: [
+    'Added sub reminder cues (per team): sound and/or vibration alerts once "time since last sub" passes a set length, repeating until the next sub — with independent on/off toggles for cues, sound, and vibration, min:sec cue timing, and an iOS vibration note',
+    'Sound/Vibration toggles and cue timing fields laid out on one line each; timing fields grey out automatically if both Sound and Vibration are off',
+    'Added a configurable off-court highlight colour per team, next to the on-court highlight colour — bench players now get their own coloured outline instead of none'
+  ]},
+  { version: '1.07a', changes: [
+    'Number of sub suggestions can now be set up to 5 regardless of current roster size — it still auto-scales down live during a game to match actual bench capacity',
+    'Default number of sub suggestions for new teams is now 3',
+    '"(max #)" hint next to sub suggestions is now a fixed "(max 5)"'
+  ]},
+  { version: '1.07', changes: [
+    'Added a Change Log page (accessible from Help) with full version history',
+    'Absent players now automatically move to the bottom of the list on the setup screen and Edit Team page, with reorder arrows constrained within the present/absent groups'
+  ]},
+  { version: '1.06', changes: [
+    'Added a "time since last sub" timer that resets when the court returns to a full 5 players',
+    'Repositioned the period label, period timer, and sub timer for clarity'
+  ]},
+  { version: '1.05', changes: [
+    'Added a Help page and an App Settings page (export, import, and clear all data)',
+    'Added a default basketball logo shown until a team uploads its own',
+    'Reorganized the Edit Team page: player list moved up, New Game moved to the bottom, Help/Settings added to the header'
+  ]},
+  { version: '1.04a', changes: [
+    'Screen now stays awake automatically during a game on mobile'
+  ]},
+  { version: '1.04', changes: [
+    'Widened the Select button on the Your Teams page',
+    'Sub Out suggestions now freeze and reset the same way Sub In suggestions do',
+    'Number of sub suggestions now auto-scales to match the active squad\'s real bench capacity'
+  ]},
+  { version: '1.03', changes: [
+    'Fixed Court Time sort order (on-court: most time at top; bench: least time at top)',
+    'Sub Out and Sub In suggestion counts are now capped independently',
+    'Sub In suggestions now freeze instead of changing names until the court is back to a full 5'
+  ]},
+  { version: '1.02', changes: [
+    'Added present/total player count to the setup screen (e.g. 8/12)',
+    'Enforced a 12-player game-day limit, with a clear warning if exceeded',
+    'Added reorder arrows and a starting-5 highlight to the setup screen',
+    'Removed the 12-player cap on the full team roster — only game-day presence is capped'
+  ]},
+  { version: '1.01', changes: [
+    'Delete Team is now hidden while a game is in progress'
+  ]},
+  { version: '1.0', changes: [
+    'Added foul tracking: "Player Foul Limit Reached" button — fouled-out players move to the bottom of the list and are excluded from subs and suggestions',
+    'Added a configurable number of sub suggestions per team, auto-scaling to bench size',
+    'Fixed mid-game player list edits not syncing to the live game roster'
+  ]},
+  { version: '0.9', changes: [
+    'Replaced native browser confirm dialogs with a custom in-app confirmation popup, fixing New Game / Next Period not responding in some environments',
+    'New Game button moved into team options, with confirmation before starting a new game',
+    'Next Period now confirms before resetting the clock if time remains, and resets the countdown',
+    'Added reorder arrows to the team list on the Select Team page'
+  ]},
+  { version: '0.7', changes: [
+    '"Select Team" button replaces the gear icon on the setup screen only',
+    'On-court players now shown at the top of the roster list during a game',
+    'Thicker on-court outline',
+    'Background colour choice now automatically adjusts text and panel contrast'
+  ]},
+  { version: '0.6', changes: [
+    'Added a present/absent toggle directly on the setup screen',
+    'Gear button jumps straight to the current team\'s settings once a game is in progress'
+  ]},
+  { version: '0.4', changes: [
+    'Player roster management moved into team options (add, rename, remove, reorder) and made persistent across sessions',
+    'Added a present/absent toggle per player in team options',
+    'Added a toggle for sub suggestions based on Court Time vs Next On List'
+  ]},
+  { version: '0.2', changes: [
+    'Earliest saved version: team creation and management (name, format, timer duration, logo, colours), basic roster entry, tap-to-sub tracking with on-court highlighting, and automatic sub suggestions'
+  ]}
+];
+function renderChangelog(){
+  const el = document.getElementById('changelogSection');
+  el.innerHTML = CHANGELOG.map(entry => `
+    <div class="changelog-entry">
+      <div class="cl-version">v${entry.version}</div>
+      <ul>${entry.changes.map(c => `<li>${c}</li>`).join('')}</ul>
+    </div>
+  `).join('');
+}
+function openChangelogModal(){
+  if(!document.getElementById('changelogSection').innerHTML) renderChangelog();
+  closeHelpModal();
+  document.getElementById('changelogModal').classList.add('active');
+}
+function closeChangelogModal(){
+  document.getElementById('changelogModal').classList.remove('active');
+}
+
+function openHelpModal(){
+  document.getElementById('versionLabel').textContent = `Sub Tracker v${APP_VERSION}`;
+  document.getElementById('helpModal').classList.add('active');
+}
+function closeHelpModal(){
+  document.getElementById('helpModal').classList.remove('active');
+}
+
+// ---------- APP SETTINGS ----------
+function openAppSettingsModal(){
+  document.getElementById('appSettingsModal').classList.add('active');
+}
+function closeAppSettingsModal(){
+  document.getElementById('appSettingsModal').classList.remove('active');
+}
+function exportAllData(){
+  const data = JSON.stringify({ teams, exportedAt: new Date().toISOString() }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sub-tracker-backup.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function importAllData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try{
+      parsed = JSON.parse(reader.result);
+    }catch(e){
+      alert('That file doesn\'t look like a valid backup.');
+      event.target.value = '';
+      return;
+    }
+    const importedTeams = Array.isArray(parsed) ? parsed : parsed.teams;
+    if(!Array.isArray(importedTeams)){
+      alert('That file doesn\'t look like a valid backup.');
+      event.target.value = '';
+      return;
+    }
+    showConfirm('This will replace all current teams with the ones in this backup. Continue?', () => {
+      teams = importedTeams;
+      saveTeams();
+      currentTeam = null;
+      applyTheme(null);
+      renderHeader();
+      renderRosterPreview();
+      closeAppSettingsModal();
+      openTeamsModal();
+    });
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+function confirmClearAllData(){
+  showConfirm('Clear all teams and data from this device? This cannot be undone.', () => {
+    teams = [];
+    saveTeams();
+    localStorage.removeItem(LAST_TEAM_KEY);
+    currentTeam = null;
+    applyTheme(null);
+    renderHeader();
+    renderRosterPreview();
+    closeAppSettingsModal();
+    openTeamEditor(null);
+  });
+}
+
+function renderFoulPlayersList(){
+  const container = document.getElementById('foulPlayersList');
+  if(!players || players.length === 0){
+    container.innerHTML = '<div class="empty-hint">No players in this game.</div>';
+    return;
+  }
+  container.innerHTML = '';
+  players.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'preview-row';
+    row.innerHTML = `
+      <span><span class="pnum">${p.num}</span>${p.name}</span>
+      <button type="button" class="presence-toggle ${p.fouledOut?'foul-out':'foul-active'}" onclick="togglePlayerFoul(${p.id})">${p.fouledOut?'Fouled Out':'Active'}</button>
+    `;
+    container.appendChild(row);
+  });
+}
+function togglePlayerFoul(id){
+  const p = players.find(pl => pl.id === id);
+  if(!p) return;
+  p.fouledOut = !p.fouledOut;
+  if(p.fouledOut && p.onCourt){
+    p.onCourt = false; // can't stay on court once fouled out
+  }
+  renderFoulPlayersList();
+  renderRoster();
+}
+
+// ---------- SUGGESTIONS ----------
+function getSuggestions(){
+  const eligibleOnCourt = players.filter(p => p.onCourt && !p.fouledOut);
+  const eligibleBench = players.filter(p => !p.onCourt && !p.fouledOut);
+  const configured = currentTeam && currentTeam.suggestCount != null ? currentTeam.suggestCount : 1;
+
+  // Auto-scale the configured count down to what's actually possible for the
+  // current active squad (present, non-fouled players) — e.g. with 7 active
+  // players there's only a 2-player bench, so at most 2 subs can happen at
+  // once, even if the team is configured for 3. This is based on total active
+  // squad size (stable), not the transient on-court/bench split, so it doesn't
+  // fluctuate mid-swap. If the squad grows again (more present, fewer fouled),
+  // this automatically scales back up — the user's configured number is never
+  // changed, just capped on the fly.
+  const totalActive = eligibleOnCourt.length + eligibleBench.length;
+  const benchCapacity = Math.max(0, totalActive - MAX_ON_COURT);
+  const effectiveConfigured = Math.min(configured, benchCapacity, MAX_ON_COURT);
+
+  const mode = currentTeam ? (currentTeam.suggestionMode || 'time') : 'time';
+
+  let onCourtSorted, benchSorted;
+  if(mode === 'order'){
+    // use current list order (players who were subbed most recently have been moved to the bottom)
+    onCourtSorted = eligibleOnCourt;
+    benchSorted = eligibleBench;
+  } else {
+    onCourtSorted = [...eligibleOnCourt].sort((a,b)=>b.seconds-a.seconds);
+    benchSorted = [...eligibleBench].sort((a,b)=>a.seconds-b.seconds);
+  }
+
+  const courtFull = eligibleOnCourt.length >= MAX_ON_COURT;
+
+  // "Time since last sub" resets right here, using the same courtFull signal
+  // that drives the suggestion freeze/refresh above — it resets the instant
+  // the court returns to a full 5 (a completed swap), then counts up again.
+  if(courtFull && !wasCourtFull){
+    timeSinceLastSub = 0;
+  }
+  wasCourtFull = courtFull;
+
+  // SUB OUT and SUB IN suggestions both work the same way: while the court is
+  // full (5), each list is live and refreshes every render. The moment a
+  // player is subbed out and the court drops below 5, both lists freeze —
+  // they only ever shrink as those specific suggested players actually get
+  // subbed, never gaining new members mid-swap. Each resets to a fresh full
+  // list once the court is back to 5.
+  let outIds;
+  if(courtFull){
+    const outCount = Math.min(effectiveConfigured, eligibleOnCourt.length);
+    outIds = onCourtSorted.slice(0, outCount).map(p=>p.id);
+    frozenSuggestOut = outIds;
+  } else {
+    const eligibleOnCourtIds = new Set(eligibleOnCourt.map(p=>p.id));
+    outIds = frozenSuggestOut.filter(id => eligibleOnCourtIds.has(id));
+    frozenSuggestOut = outIds;
+  }
+
+  let inIds;
+  if(courtFull){
+    const inCount = Math.min(effectiveConfigured, eligibleBench.length);
+    inIds = benchSorted.slice(0, inCount).map(p=>p.id);
+    frozenSuggestIn = inIds;
+  } else {
+    const eligibleBenchIds = new Set(eligibleBench.map(p=>p.id));
+    inIds = frozenSuggestIn.filter(id => eligibleBenchIds.has(id));
+    frozenSuggestIn = inIds;
+  }
+
+  return {
+    out: outIds,
+    in: inIds
+  };
+}
+
+// ---------- RENDER ----------
+function renderRoster(){
+  const roster = document.getElementById('roster');
+  const maxSeconds = Math.max(1, ...players.map(p=>p.seconds));
+  const suggestions = getSuggestions();
+  document.getElementById('subTimer').textContent = fmtTime(timeSinceLastSub);
+  const courtCount = players.filter(p=>p.onCourt).length;
+  document.getElementById('courtCount').textContent = courtCount;
+
+  const mode = currentTeam ? (currentTeam.suggestionMode || 'time') : 'time';
+  document.getElementById('statusStrip').textContent = mode === 'order'
+    ? 'Suggestions follow the fixed player list order'
+    : 'Bar fill shows time played relative to the most-played player';
+
+  roster.innerHTML = '';
+  const active = players.filter(p=>!p.fouledOut);
+  const fouled = players.filter(p=>p.fouledOut);
+  let onCourtGroup = active.filter(p=>p.onCourt);
+  let benchGroup = active.filter(p=>!p.onCourt);
+  if(mode === 'time'){
+    // on-court: most time played (sub-out candidates) at top
+    onCourtGroup = [...onCourtGroup].sort((a,b)=>b.seconds-a.seconds);
+    // bench: least time played (sub-in candidates) at top
+    benchGroup = [...benchGroup].sort((a,b)=>a.seconds-b.seconds);
+  }
+  const displayOrder = [...onCourtGroup, ...benchGroup, ...fouled];
+  displayOrder.forEach(p => {
+    const pct = Math.min(100, (p.seconds / maxSeconds) * 100);
+    const isOut = suggestions.out.includes(p.id);
+    const isIn = suggestions.in.includes(p.id);
+    const div = document.createElement('div');
+    div.className = 'player-bar'
+      + (p.onCourt ? ' oncourt' : '')
+      + (isOut ? ' suggest-out' : '')
+      + (isIn ? ' suggest-in' : '')
+      + (p.fouledOut ? ' fouled-out' : '');
+    if(!p.fouledOut){
+      div.onclick = () => toggleSub(p.id);
+    }
+    div.innerHTML = `
+      <div class="fill" style="width:${pct}%"></div>
+      <div class="bar-content">
+        <div class="bar-left">
+          <div class="jersey">${p.num}</div>
+          <div class="pname">${p.name}</div>
+          ${p.fouledOut ? '<div class="ptag tag-foul">Fouled Off</div>' : ''}
+          ${isOut ? '<div class="ptag tag-out">SUB OUT</div>' : ''}
+          ${isIn ? '<div class="ptag tag-in">SUB IN</div>' : ''}
+        </div>
+        <div class="ptime">${fmtTime(p.seconds)}</div>
+      </div>
+    `;
+    roster.appendChild(div);
+  });
+}
+
+// ---------- PWA: service worker registration ----------
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {
+      // registration can fail (e.g. opened via file:// instead of https://) — harmless, app still works
+    });
+  });
+}
+
+init();
+</script>
+</body>
+</html>
