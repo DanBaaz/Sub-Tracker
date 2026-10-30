@@ -92,7 +92,7 @@
     color:var(--muted);
     font-size:12px;
   }
-  .topbar-actions{
+  .topbar-actions{margin-left:auto;
     display:flex;
     align-items:center;
     gap:8px;
@@ -115,12 +115,14 @@
   .gear-btn.select-team-btn{
     width:auto;
     height:auto;
+    min-width:min(200px, 48vw);
     border-radius:20px;
     padding:10px 16px;
     font-size:13px;
     font-weight:700;
     background:var(--accent);
     color:#1a1005;
+    text-align:center;
   }
 
   /* SETUP SCREEN */
@@ -131,11 +133,43 @@
     max-width:480px;
     margin:0 auto;
   }
-  .setup-hint{
+  .setup-team-header{
+    margin-bottom:14px;
+  }
+  .setup-team-top{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .setup-logo{
+    width:38px;height:38px;
+    border-radius:9px;
+    object-fit:cover;
+    background:var(--panel2);
+    flex-shrink:0;
+  }
+  .setup-team-name{
+    font-size:19px;
+    font-weight:700;
+    text-align:center;
+    word-break:break-word;
+  }
+  .setup-team-meta{
     color:var(--muted);
+    font-size:12px;
+    text-align:center;
+    margin-bottom:8px;
+  }
+  .setup-hint{
+    color:var(--text);
     font-size:13px;
     text-align:center;
-    margin-bottom:14px;
+    margin-bottom:0;
+  }
+  .setup-hint #presentCountLabel{
+    font-weight:700;
   }
   .preview-row{
     display:flex;
@@ -473,12 +507,32 @@
   }
   .team-card{
     display:flex;
-    align-items:center;
-    gap:12px;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
     background:var(--panel2);
     border-radius:12px;
-    padding:12px;
+    padding:14px;
     margin-bottom:10px;
+  }
+  .team-card-name{
+    font-weight:700;
+    font-size:17px;
+    text-align:center;
+    word-break:break-word;
+  }
+  .team-card-top{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .team-card-middle{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:14px;
   }
   .team-card img{
     width:40px;height:40px;
@@ -494,9 +548,11 @@
     background:#0004;
     font-size:18px;
   }
-  .team-card-info{flex:1;min-width:0;}
-  .team-card-info .tname{font-weight:700;font-size:15px;}
-  .team-card-info .tmeta{font-size:12px;color:var(--muted);}
+  .team-card-meta{
+    font-size:12px;
+    color:var(--muted);
+    text-align:center;
+  }
   .team-card-actions{display:flex;gap:6px;flex-shrink:0;}
   .team-card-actions button{
     padding:7px 10px;
@@ -798,7 +854,7 @@
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="topbar-team">
+  <div class="topbar-team" id="topbarTeam">
     <img id="headerLogo" class="topbar-logo" style="display:none;">
     <div id="headerLogoDefault" class="topbar-logo logo-default">🏀</div>
     <div class="topbar-titles">
@@ -816,7 +872,15 @@
 <!-- SETUP SCREEN -->
 <div id="setup" class="screen active">
   <div class="setup-card">
-    <div class="setup-hint">Present players for today's game. <span id="presentCountLabel">(0/0)</span></div>
+    <div class="setup-team-header">
+      <div class="setup-team-top">
+        <img id="setupLogo" class="setup-logo" style="display:none;">
+        <div id="setupLogoDefault" class="setup-logo logo-default">🏀</div>
+        <div class="setup-team-name" id="setupTeamName">🏀 Sub Tracker</div>
+      </div>
+      <div class="setup-team-meta" id="setupTeamMeta">Junior basketball substitution manager</div>
+      <div class="setup-hint">Present players for today's game. <span id="presentCountLabel">(0/0)</span></div>
+    </div>
     <div id="rosterPreview"></div>
     <button class="btn-primary" id="startBtn2" onclick="startGame()">Start Game</button>
   </div>
@@ -1106,7 +1170,7 @@
       </div>
       <div class="help-section">
         <h3>Missed sub warning</h3>
-        <p>Set in App Settings (🛠️): flashes the screen and plays a sound if the court has fewer than 5 players for too long — a sign a substitution was left half-finished. Configurable delay (default 20 sec), with its own on/off toggle. Won't trigger if the squad only has 4 or fewer players available to play.</p>
+        <p>Set in App Settings (🛠️): flashes the screen and plays a sound if the court has fewer than 5 players for too long — a sign a substitution was left half-finished. Configurable delay (default 5 sec), with its own on/off toggle. Won't trigger if the squad only has 4 or fewer players available to play.</p>
       </div>
       <div class="help-section">
         <h3>Colours &amp; appearance</h3>
@@ -1118,7 +1182,7 @@
       </div>
       <div class="help-section version-section">
         <p class="version-line">
-          <span id="versionLabel">Sub Tracker v1.10</span> —
+          <span id="versionLabel">Sub Tracker v1.11</span> —
           <button type="button" class="changelog-link" onclick="openChangelogModal()">Change Log</button>
         </p>
       </div>
@@ -1164,7 +1228,7 @@
     </div>
     <div class="form-group missed-sub-option" id="missedSubTimingGroup">
       <label>Time before warning (sec)</label>
-      <input type="number" id="editMissedSubSeconds" min="5" step="5" value="20" onchange="saveMissedSubSeconds()">
+      <input type="number" id="editMissedSubSeconds" min="5" step="5" value="5" onchange="saveMissedSubSeconds()">
     </div>
     <div class="form-group">
       <label>Backup &amp; restore</label>
@@ -1201,7 +1265,7 @@ let editingCueSound = true;
 let editingCueVibration = true;
 let editingCueFlash = true;
 let missedSubEnabled = true;
-let missedSubSeconds = 20;
+let missedSubSeconds = 5;
 let editingLogoData = null;
 let editingPlayers = []; // working copy of players while editing a team
 
@@ -1297,7 +1361,7 @@ function loadMissedSubSettings(){
   const rawEnabled = localStorage.getItem(MISSED_SUB_ENABLED_KEY);
   missedSubEnabled = rawEnabled === null ? true : rawEnabled === 'true';
   const rawSeconds = parseInt(localStorage.getItem(MISSED_SUB_SECONDS_KEY));
-  missedSubSeconds = isNaN(rawSeconds) ? 20 : rawSeconds;
+  missedSubSeconds = isNaN(rawSeconds) ? 5 : rawSeconds;
 }
 function setMissedSubEnabled(val){
   missedSubEnabled = val;
@@ -1308,7 +1372,7 @@ function setMissedSubEnabled(val){
 }
 function saveMissedSubSeconds(){
   const input = document.getElementById('editMissedSubSeconds');
-  let v = Math.max(5, parseInt(input.value) || 20);
+  let v = Math.max(5, parseInt(input.value) || 5);
   input.value = v;
   missedSubSeconds = v;
   localStorage.setItem(MISSED_SUB_SECONDS_KEY, String(v));
@@ -1378,23 +1442,38 @@ function renderHeader(){
   const metaEl = document.getElementById('headerMeta');
   const logoEl = document.getElementById('headerLogo');
   const logoDefaultEl = document.getElementById('headerLogoDefault');
+  const setupNameEl = document.getElementById('setupTeamName');
+  const setupMetaEl = document.getElementById('setupTeamMeta');
+  const setupLogoEl = document.getElementById('setupLogo');
+  const setupLogoDefaultEl = document.getElementById('setupLogoDefault');
   if(currentTeam){
     nameEl.textContent = currentTeam.name;
     const fmtLabel = currentTeam.format === 'halves' ? '2 halves' : '4 quarters';
     metaEl.textContent = `${fmtLabel} · ${currentTeam.periodMinutes} min each`;
+    setupNameEl.textContent = currentTeam.name;
+    setupMetaEl.textContent = `${fmtLabel} · ${currentTeam.periodMinutes} min each`;
     if(currentTeam.logo){
       logoEl.src = currentTeam.logo;
       logoEl.style.display = 'block';
       logoDefaultEl.style.display = 'none';
+      setupLogoEl.src = currentTeam.logo;
+      setupLogoEl.style.display = 'block';
+      setupLogoDefaultEl.style.display = 'none';
     } else {
       logoEl.style.display = 'none';
       logoDefaultEl.style.display = 'flex';
+      setupLogoEl.style.display = 'none';
+      setupLogoDefaultEl.style.display = 'flex';
     }
   } else {
     nameEl.textContent = '🏀 Sub Tracker';
     metaEl.textContent = 'Junior basketball substitution manager';
     logoEl.style.display = 'none';
     logoDefaultEl.style.display = 'none';
+    setupNameEl.textContent = '🏀 Sub Tracker';
+    setupMetaEl.textContent = 'Junior basketball substitution manager';
+    setupLogoEl.style.display = 'none';
+    setupLogoDefaultEl.style.display = 'none';
   }
 }
 
@@ -1427,19 +1506,21 @@ function renderTeamsList(){
     card.className = 'team-card';
     const fmtLabel = t.format === 'halves' ? '2 halves' : '4 quarters';
     card.innerHTML = `
-      <div class="reorder-btns">
-        <button type="button" class="order-btn" onclick="moveTeam(${i},-1)" ${i===0?'disabled':''}>▲</button>
-        <button type="button" class="order-btn" onclick="moveTeam(${i},1)" ${i===teams.length-1?'disabled':''}>▼</button>
+      <div class="team-card-top">
+        ${t.logo ? `<img src="${t.logo}">` : `<div class="logo-default">🏀</div>`}
+        <div class="team-card-name">${t.name}</div>
       </div>
-      ${t.logo ? `<img src="${t.logo}">` : `<div class="logo-default">🏀</div>`}
-      <div class="team-card-info">
-        <div class="tname">${t.name}</div>
-        <div class="tmeta">${fmtLabel} · ${t.periodMinutes} min</div>
+      <div class="team-card-middle">
+        <div class="reorder-btns">
+          <button type="button" class="order-btn" onclick="moveTeam(${i},-1)" ${i===0?'disabled':''}>▲</button>
+          <button type="button" class="order-btn" onclick="moveTeam(${i},1)" ${i===teams.length-1?'disabled':''}>▼</button>
+        </div>
+        <div class="team-card-actions">
+          <button class="btn-select" onclick="selectTeam('${t.id}', true)">Select</button>
+          <button class="btn-edit" onclick="openTeamEditor('${t.id}')">Edit</button>
+        </div>
       </div>
-      <div class="team-card-actions">
-        <button class="btn-select" onclick="selectTeam('${t.id}', true)">Select</button>
-        <button class="btn-edit" onclick="openTeamEditor('${t.id}')">Edit</button>
-      </div>
+      <div class="team-card-meta">${fmtLabel} · ${t.periodMinutes} min</div>
     `;
     container.appendChild(card);
   });
@@ -1485,12 +1566,26 @@ function renderRosterPreview(){
   const container = document.getElementById('rosterPreview');
   const startBtn = document.getElementById('startBtn2');
   const countLabel = document.getElementById('presentCountLabel');
+
+  if(teams.length === 0){
+    // nothing to select or point at yet — skip the "no players" hint and let this
+    // double as the quickest way to create a first team
+    container.innerHTML = '';
+    countLabel.textContent = '(0/0)';
+    startBtn.disabled = false;
+    startBtn.classList.remove('limit-exceeded');
+    startBtn.textContent = '+ New Team';
+    startBtn.onclick = () => openTeamEditor(null);
+    return;
+  }
+
   if(!currentTeam || !currentTeam.players || currentTeam.players.length === 0){
     container.innerHTML = '<div class="preview-empty">No players yet. Add players for this team via the ⚙️ options menu.</div>';
     countLabel.textContent = '(0/0)';
     startBtn.disabled = true;
     startBtn.classList.remove('limit-exceeded');
     startBtn.textContent = 'Start Game';
+    startBtn.onclick = startGame;
     return;
   }
   container.innerHTML = '';
@@ -1519,6 +1614,7 @@ function renderRosterPreview(){
   const totalCount = currentTeam.players.length;
   countLabel.textContent = `(${presentCount}/${Math.min(totalCount, MAX_PRESENT)})`;
 
+  startBtn.onclick = startGame;
   if(presentCount > MAX_PRESENT){
     startBtn.disabled = true;
     startBtn.classList.add('limit-exceeded');
@@ -1571,7 +1667,12 @@ function openTeamEditor(id){
   document.getElementById('editCueMin').value = Math.floor(cueTotalSec / 60);
   document.getElementById('editCueSec').value = cueTotalSec % 60;
   document.getElementById('editCueRepeatSeconds').value = t && t.cueRepeatSeconds != null ? t.cueRepeatSeconds : 30;
-  editingPlayers = t && t.players ? JSON.parse(JSON.stringify(t.players)) : [];
+  if(t && t.players){
+    editingPlayers = JSON.parse(JSON.stringify(t.players));
+  } else {
+    // new team: start with 5 blank rows ready to fill in, instead of an empty list
+    editingPlayers = Array.from({length: 5}, () => ({num: '', name: '', present: true}));
+  }
   sortPlayersPresenceFirst(editingPlayers);
   renderEditPlayersList();
   document.getElementById('editSuggestCount').value = t && t.suggestCount != null ? t.suggestCount : 3;
@@ -1877,6 +1978,13 @@ function updateGearButton(name){
   const btn = document.getElementById('gearBtn');
   const helpBtn = document.getElementById('topHelpBtn');
   const settingsBtn = document.getElementById('topSettingsBtn');
+  const metaEl = document.getElementById('headerMeta');
+  // the setup page already shows team format/duration directly above the player
+  // list, so hide the duplicate copy of it up in the top bar on that screen only
+  metaEl.style.display = (name === 'setup') ? 'none' : 'block';
+  // setup page already shows the team icon and name above the player list,
+  // so drop the top-bar copy there (still needed during a game)
+  document.getElementById('topbarTeam').style.display = (name === 'setup') ? 'none' : 'flex';
   if(name === 'setup'){
     btn.textContent = 'Select Team';
     btn.classList.add('select-team-btn');
@@ -2059,7 +2167,7 @@ function checkSubCue(){
 
 function checkMissedSub(){
   if(!missedSubEnabled) return;
-  const threshold = missedSubSeconds || 20;
+  const threshold = missedSubSeconds || 5;
   if(threshold <= 0) return;
   if(courtShortSeconds < threshold) return;
   const elapsedSinceThreshold = courtShortSeconds - threshold;
@@ -2181,8 +2289,19 @@ function resetToDefaultTheme(){
 // ---------- VERSION & CHANGE LOG ----------
 // Update APP_VERSION and add a new entry to the top of CHANGELOG whenever
 // told about a new version — that's the only thing that needs editing here.
-const APP_VERSION = '1.10';
+const APP_VERSION = '1.11';
 const CHANGELOG = [
+  { version: '1.11', changes: [
+    'Reworked the Your Teams cards: team name on top, icon/reorder/Select/Edit in the middle, format & duration at the bottom — fixes long team names overlapping the buttons',
+    'Reworked the team setup page header: team icon & name on top, format & duration beneath, present-player count below that (now shown in white instead of grey)',
+    'Widened the Select Team button',
+    'Team setup page: duplicate team info removed from the top bar (kept above the player list), and the whole "Present players" line is now white',
+    'When no teams exist, the setup page now shows a "+ New Team" button instead of Start Game, and the outdated gear hint is gone',
+    'New teams now start with 5 blank player rows ready to fill in',
+    'Missed sub warning now defaults to 5 seconds (was 20)',
+    'Team setup page: team icon and name removed from the top bar (still shown above the player list)',
+    'Your Teams menu: team icon moved up next to the team name'
+  ]},
   { version: '1.10', changes: [
     'Added Late player marking (mid-game): players who arrive after the game starts can be marked "Late" instead of Present — fully playable right away, with a red segment on their bar recording the time they missed. Toggle it on/off in App Settings',
     'Added a Missed sub warning (App Settings): flashes the screen and plays a sound if the court has fewer than 5 players for too long, with a configurable delay — skips triggering when the squad has 4 or fewer players available to play',
