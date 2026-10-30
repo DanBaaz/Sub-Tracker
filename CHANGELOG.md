@@ -3,6 +3,17 @@
 All notable changes to Sub Tracker, newest first. This mirrors the
 in-app Change Log (Help → Change Log).
 
+## v1.11
+- Reworked the Your Teams cards: team name on top, icon/reorder/Select/Edit in the middle, format & duration at the bottom — fixes long team names overlapping the buttons
+- Reworked the team setup page header: team icon & name on top, format & duration beneath, present-player count below that (now shown in white instead of grey)
+- Widened the Select Team button
+- Team setup page: duplicate team info removed from the top bar (kept above the player list), and the whole "Present players" line is now white
+- When no teams exist, the setup page now shows a "+ New Team" button instead of Start Game, and the outdated gear hint is gone
+- New teams now start with 5 blank player rows ready to fill in
+- Missed sub warning now defaults to 5 seconds (was 20)
+- Team setup page: team icon and name removed from the top bar (still shown above the player list)
+- Your Teams menu: team icon moved up next to the team name
+
 ## v1.10
 - Added Late player marking (mid-game): players who arrive after the game starts can be marked "Late" instead of Present — fully playable right away, with a red segment on their bar recording the time they missed. Toggle it on/off in App Settings
 - Added a Missed sub warning (App Settings): flashes the screen and plays a sound if the court has fewer than 5 players for too long, with a configurable delay — skips triggering when the squad has 4 or fewer players available to play
