@@ -1,5 +1,7 @@
 # Sub Tracker (v1.11)
 
+https://danbaaz.github.io/Sub-Tracker/sub-tracker.html
+
 A sideline substitution tracker for junior basketball — tracks on-court time per
 player, suggests who to sub in/out, runs the game clock, and works fully
 offline once installed on a phone.
